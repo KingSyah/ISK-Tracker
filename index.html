@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ISK Tracker - EVE Online</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-left">
+                <button id="addDataBtn" class="header-btn"><i class="fas fa-plus"></i> Tambah Data</button>
+                <button id="resetBtn" class="header-btn"><i class="fas fa-sync-alt"></i> Reset</button>
+            </div>
+            <div class="header-right">
+                <button id="theme-toggle" class="theme-btn">
+                    <i class="fas fa-sun"></i>
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+        </header>
+
+        <main class="dashboard">
+            <div class="card card-full-width" id="main-title-card">
+                <h1>ISK Tracker</h1>
+                <p>Paste data transaksi dari EVE Online, lalu visualisasikan pemasukan dan pengeluaranmu secara profesional.</p>
+                <p class="local-notice">(Aplikasi berjalan 100% lokal untuk keamanan data!)</p>
+            </div>
+
+            <div class="card" id="input-card">
+                <div class="card-header">
+                    <h2>Paste Transaksi EVE Online</h2>
+                </div>
+                <textarea id="data-input" placeholder="2025.06.14 07:43	ESS Escrow Payment	30.647.013 ISK	1.986.069.125 ISK	..."></textarea>
+                <button id="process-data-btn">Proses Data</button>
+            </div>
+
+            <div class="card" id="daily-flow-card">
+                <div class="card-header">
+                    <h2>Flow ISK Harian</h2>
+                </div>
+                <canvas id="dailyFlowChart"></canvas>
+            </div>
+
+            <div class="card card-full-width" id="summary-card">
+                <div class="summary-item">
+                    <h3>Total Pendapatan</h3>
+                    <p id="total-income">0 ISK</p>
+                </div>
+                <div class="summary-item">
+                    <h3>Total Pengeluaran</h3>
+                    <p id="total-expense">0 ISK</p>
+                </div>
+                <div class="summary-item">
+                    <h3>Saldo Akhir</h3>
+                    <p id="final-balance">0 ISK</p>
+                </div>
+            </div>
+
+            <div class="card" id="proportion-card">
+                <div class="card-header">
+                    <h2>Proporsi ISK Masuk & Keluar</h2>
+                </div>
+                <canvas id="proportionChart"></canvas>
+            </div>
+
+            <div class="card" id="balance-history-card">
+                <div class="card-header">
+                    <h2>Grafik Saldo ISK</h2>
+                </div>
+                <canvas id="balanceHistoryChart"></canvas>
+            </div>
+
+            <div class="card card-full-width action-buttons">
+                 <button id="view-details-btn"><i class="fas fa-list-alt"></i> Lihat Detail Transaksi</button>
+                 <button id="print-pdf-btn"><i class="fas fa-print"></i> Print to PDF</button>
+            </div>
+        </main>
+
+        <footer>
+            <p>ISK Tracker - KingSyah &copy; <span id="current-year"></span></p>
+        </footer>
+    </div>
+
+    <!-- Modal for transaction details -->
+    <div id="details-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Detail Transaksi</h2>
+                <span class="close-btn">&times;</span>
+            </div>
+            <div class="modal-body">
+                <table id="transaction-table">
+                    <thead>
+                        <tr>
+                            <th>Tanggal</th>
+                            <th>Deskripsi</th>
+                            <th>Jumlah</th>
+                            <th>Saldo</th>
+                            <th>Memo</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Rows will be inserted here by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- PDF Layout -->
+    <div id="pdf-layout" style="display: none;">
+        <div id="pdf-header">
+            <h1>Laporan Transaksi ISK</h1>
+            <p>Dibuat pada: <span id="pdf-generation-date"></span></p>
+        </div>
+        <div id="pdf-summary">
+            <!-- Summary will be populated by JS -->
+        </div>
+        <div id="pdf-charts">
+            <div class="pdf-chart-container">
+                <h2>Flow ISK Harian</h2>
+                <img id="pdf-daily-flow-chart" alt="Grafik Flow ISK Harian"/>
+            </div>
+            <div class="pdf-chart-container">
+                <h2>Proporsi ISK</h2>
+                <img id="pdf-proportion-chart" alt="Grafik Proporsi ISK"/>
+            </div>
+            <div class="pdf-chart-container full-width">
+                <h2>Grafik Saldo ISK</h2>
+                <img id="pdf-balance-history-chart" alt="Grafik Saldo ISK"/>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
+    <script src="js/script.js"></script>
+</body>
+</html> 
