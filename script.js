@@ -71,16 +71,37 @@
     function parseRawData(text) {
         const lines = text.replace(/\r/g, '').trim().split('\n');
         const txs = [];
+        let detectedName = null;
         for (const line of lines) {
+            if (!line.trim()) continue;
             const parts = line.split('\t');
-            if (parts.length < 5) continue;
-            const [dt, desc, amtStr, balStr, memo] = parts;
+            if (parts.length < 4) continue;
+
+            const dt = parts[0].trim();
+            const desc = parts[1].trim();
+            const amtStr = parts[2].trim();
+            const balStr = parts[3].trim();
+            const memo = parts.length >= 5 ? parts[4].trim() : '';
+
+            // Auto-detect character name from memo
+            if (!detectedName && memo) {
+                const nameMatch = memo.match(/(?:to|from|by|paid from|deposited into)\s+([A-Z][a-zA-Z'.]+(?:\s+[a-zA-Z'.]+)+?)(?:'s|,|\s+(?:to|for|got|paid|transferred))/);
+                if (nameMatch) detectedName = nameMatch[1].trim();
+            }
+
             const date = new Date(dt.replace(/\./g, '-'));
             const amount = parseISK(amtStr);
             const balance = parseISK(balStr);
-            if (isNaN(date.getTime()) || isNaN(amount)) continue;
+
+            if (isNaN(date.getTime())) continue;
+            if (isNaN(amount) || amount === 0) continue;
+
             const cat = getCategory(desc);
-            txs.push({ date, description: desc.trim(), amount, balance, memo: memo.trim(), category: cat });
+            txs.push({ date, description: desc, amount, balance, memo, category: cat });
+        }
+        if (detectedName) {
+            const el = document.getElementById('charName');
+            if (el) el.textContent = detectedName;
         }
         return txs;
     }
@@ -600,7 +621,7 @@
             doc.text('EVE Online ISK Audit Report', pw / 2, 15, { align: 'center' });
             doc.setFontSize(10);
             doc.setFont(undefined, 'normal');
-            doc.text(`Character: KingSyah van deKills | Generated: ${new Date().toLocaleString()}`, pw / 2, 22, { align: 'center' });
+            doc.text(`Generated: ${new Date().toLocaleString()}`, pw / 2, 22, { align: 'center' });
 
             // Summary
             let totalIncome = 0, totalExpense = 0;
@@ -658,7 +679,7 @@
                 didDrawPage: (data) => {
                     doc.setFontSize(7);
                     doc.setTextColor(150);
-                    doc.text(`ISK Audit Report — KingSyah van deKills — Page ${doc.internal.getNumberOfPages()}`, pw / 2, doc.internal.pageSize.getHeight() - 5, { align: 'center' });
+                    doc.text(`ISK Audit Report — Page ${doc.internal.getNumberOfPages()}`, pw / 2, doc.internal.pageSize.getHeight() - 5, { align: 'center' });
                 }
             });
 
@@ -741,8 +762,8 @@
         });
 
         // Import confirm button
-        $('#importConfirmBtn').addEventListener('click', () => {
-            const raw = $('#importTextarea').value;
+        document.getElementById('importConfirmBtn').addEventListener('click', function() {
+            const raw = document.getElementById('importTextarea').value;
             if (!raw.trim()) { alert('Please paste your wallet data first.'); return; }
 
             const newTx = parseRawData(raw);
@@ -761,11 +782,11 @@
 
             // Close modal & refresh
             document.getElementById('importModal').style.display = 'none';
-            $('#importTextarea').value = '';
+            document.getElementById('importTextarea').value = '';
             populateCategoryFilter();
             updateDashboard();
 
-            alert(`${newTx.length} transactions imported successfully.`);
+            alert(newTx.length + ' transactions imported successfully.');
         });
 
         // Reset button
@@ -788,7 +809,7 @@
 
         // Copyright year auto-update
         const copyrightEl = document.getElementById('copyright-text');
-        if (copyrightEl) copyrightEl.textContent = `© ${new Date().getFullYear()} KingSyah`;
+        if (copyrightEl) copyrightEl.textContent = `© ${new Date().getFullYear()} ISK Tracker`;
     }
 
     document.addEventListener('DOMContentLoaded', init);
