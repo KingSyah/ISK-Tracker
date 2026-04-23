@@ -131,7 +131,7 @@ See [CHANGELOG.md](CHANGELOG.md) for full version history.
 
 ## License
 
-MIT License — 2026 ISK Tracker
+MIT License — 2026 KingSyah
 
 ---
 
