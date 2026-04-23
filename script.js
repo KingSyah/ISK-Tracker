@@ -1021,10 +1021,14 @@
             }
         });
 
-        // EVE tabs (cosmetic)
+        // EVE tabs — functional tab switching
         bindAll('.eve-tab', 'click', function() {
+            var tabName = this.dataset.tab;
             document.querySelectorAll('.eve-tab').forEach(function(t) { t.classList.remove('active'); });
             this.classList.add('active');
+            document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.remove('active'); });
+            var panel = document.querySelector('.tab-panel.tab-' + tabName);
+            if (panel) panel.classList.add('active');
         });
 
         // Copyright year

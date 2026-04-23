@@ -730,6 +730,7 @@ body.light .ambient-bg {
 
     /* Table section */
     .table-section { padding: 0.85rem; }
+    .tab-table-wrap { padding: 0.85rem; }
     .section-header { flex-direction: column; align-items: flex-start; gap: 0.5rem; margin-bottom: 0.6rem; }
     .section-header h2 { font-size: 0.95rem; }
     .table-controls { flex-wrap: wrap; gap: 0.4rem; width: 100%; }
@@ -829,6 +830,20 @@ body.light .ambient-bg {
     border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
     overflow: hidden;
+}
+
+/* --- Tab Panels --- */
+.tab-panel {
+    display: none;
+}
+.tab-panel.active {
+    display: block;
+}
+.tab-table-wrap {
+    padding: 1.25rem;
+}
+.tab-table-wrap .section-header {
+    margin-bottom: 0.75rem;
 }
 
 .eve-tabs {
