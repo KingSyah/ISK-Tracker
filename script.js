@@ -936,7 +936,7 @@
 
         // Copyright year
         var copyrightEl = document.getElementById('copyright-text');
-        if (copyrightEl) copyrightEl.textContent = '\u00A9 ' + new Date().getFullYear() + ' ISK Tracker';
+        if (copyrightEl) copyrightEl.textContent = '\u00A9 ' + new Date().getFullYear() + ' KingSyah';
     }
 
     // Ensure init runs exactly once
