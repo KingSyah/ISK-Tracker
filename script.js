@@ -683,6 +683,19 @@
 
         alert('Generating PDF… This may take a moment.');
 
+        // Temporarily show analysis tab so charts render properly
+        var analysisPanel = document.querySelector('.tab-panel.tab-analysis');
+        var overviewPanel = document.querySelector('.tab-panel.tab-overview');
+        var wasAnalysisActive = analysisPanel && analysisPanel.classList.contains('active');
+        if (!wasAnalysisActive && analysisPanel) {
+            analysisPanel.classList.add('active');
+            // Resize charts to render in now-visible container
+            if (chartBalance) chartBalance.resize();
+            if (chartIncomePie) chartIncomePie.resize();
+            if (chartExpensePie) chartExpensePie.resize();
+            if (chartDailyNet) chartDailyNet.resize();
+        }
+
         try {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
@@ -845,6 +858,15 @@
             console.error('PDF error:', err);
             alert('Failed to generate PDF. Check console for details.');
         }
+
+        // Restore tab state — go back to overview if analysis was not originally active
+        if (!wasAnalysisActive && analysisPanel) {
+            analysisPanel.classList.remove('active');
+            if (overviewPanel) overviewPanel.classList.add('active');
+            document.querySelectorAll('.eve-tab').forEach(function(t) { t.classList.remove('active'); });
+            var overviewTab = document.querySelector('.eve-tab[data-tab="overview"]');
+            if (overviewTab) overviewTab.classList.add('active');
+        }
     }
 
     // ── Theme ──
@@ -874,7 +896,7 @@
 
         var notice = document.createElement('div');
         notice.id = 'dataNotice';
-        notice.style.cssText = 'position:sticky;top:0;z-index:200;display:flex;align-items:center;justify-content:center;gap:0.75rem;padding:0.6rem 1rem;background:linear-gradient(135deg,#1e3a5f,#1a2744);border-bottom:1px solid rgba(59,130,246,0.3);font-size:0.85rem;color:#e8ecf4;flex-wrap:wrap;text-align:center;';
+        notice.style.cssText = 'position:relative;z-index:50;display:flex;align-items:center;justify-content:center;gap:0.75rem;padding:0.6rem 1rem;background:linear-gradient(135deg,#1e3a5f,#1a2744);border-bottom:1px solid rgba(59,130,246,0.3);font-size:0.85rem;color:#e8ecf4;flex-wrap:wrap;text-align:center;';
         notice.innerHTML = '<i class="fas fa-database" style="color:#3b82f6"></i>' +
             '<span>Data sebelumnya ditemukan: <strong>' + count + ' transaksi</strong></span>' +
             '<button id="noticeContinue" style="padding:0.3rem 0.8rem;border-radius:6px;border:1px solid #3b82f6;background:transparent;color:#3b82f6;cursor:pointer;font-family:var(--font-sans);font-size:0.8rem;font-weight:500;transition:all 0.2s">Lanjutkan</button>' +
@@ -1029,6 +1051,16 @@
             document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.remove('active'); });
             var panel = document.querySelector('.tab-panel.tab-' + tabName);
             if (panel) panel.classList.add('active');
+            // Resize charts when analysis tab becomes visible
+            if (tabName === 'analysis') {
+                if (chartBalance) chartBalance.resize();
+                if (chartIncomePie) chartIncomePie.resize();
+                if (chartExpensePie) chartExpensePie.resize();
+                if (chartDailyNet) chartDailyNet.resize();
+            }
+            if (tabName === 'overview') {
+                if (chartEveDonut) chartEveDonut.resize();
+            }
         });
 
         // Copyright year
