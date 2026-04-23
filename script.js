@@ -86,12 +86,23 @@
 
             // Auto-detect character name from memo patterns
             if (!detectedName && memo) {
-                // Pattern: "[r] KingSyah van deKills got bounty prizes..."
-                let m = memo.match(/\[r\]\s+([A-Z][a-zA-Z'.]+(?:\s+[a-zA-Z'.]+)+?)\s+(?:got|was|has)/);
-                if (!m) m = memo.match(/(?:to|from|by|paid from)\s+([A-Z][a-zA-Z'.]+(?:\s+[a-zA-Z'.]+)+?)(?:'s|,|\s+(?:to|for|account))/);
-                if (!m) m = memo.match(/authorized by:\s+([A-Z][a-zA-Z'.]+(?:\s+[a-zA-Z'.]+)+?)$/);
-                if (!m) m = memo.match(/KingSyah van deKills/i);
-                if (m) detectedName = typeof m === 'string' ? m : (m[1] || m[0]).trim();
+                // Pattern 1: "[r] Name Here got/was/has..."
+                let m = memo.match(/\[r\]\s+([A-Z][a-zA-Z'.]+(?:\s+[a-zA-Z'.]+){1,4}?)\s+(?:got|was|has)/);
+                // Pattern 2: "paid from Name Here to ..."
+                if (!m) m = memo.match(/paid from\s+([A-Z][a-zA-Z'.]+(?:\s+[a-zA-Z'.]+){1,4}?)\s+to\s/);
+                // Pattern 3: "to/from/by Name Here's account" or "to/from/by Name Here,"
+                if (!m) m = memo.match(/(?:to|from|by)\s+([A-Z][a-zA-Z'.]+(?:\s+[a-zA-Z'.]+){1,4}?)('s|,|\s+(?:to|for|account|deposited))/);
+                // Pattern 4: "authorized by: Name Here" at end of string
+                if (!m) m = memo.match(/authorized by:\s+([A-Z][a-zA-Z'.]+(?:\s+[a-zA-Z'.]+){1,4}?)$/);
+                // Pattern 5: "transferred funds to Name Here" at end of string
+                if (!m) m = memo.match(/transferred funds to\s+([A-Z][a-zA-Z'.]+(?:\s+[a-zA-Z'.]+){1,4}?)$/);
+                // Pattern 6: "by Name Here" at end of string (daily goals, etc.)
+                if (!m) m = memo.match(/\bby\s+([A-Z][a-zA-Z'.]+(?:\s+[a-zA-Z'.]+){1,4}?)$/);
+                // Pattern 7: "bought stuff from Name Here"
+                if (!m) m = memo.match(/bought stuff from\s+([A-Z][a-zA-Z'.]+(?:\s+[a-zA-Z'.]+){1,4}?)$/);
+                // Pattern 8: Name at very start of memo followed by action verb
+                if (!m) m = memo.match(/^([A-Z][a-zA-Z'.]+(?:\s+[a-zA-Z'.]+){1,4}?)\s+(?:got|purchased|completed|deposited|paid)/);
+                if (m) detectedName = (m[1] || m[0]).trim();
             }
 
             const date = new Date(dt.replace(/\./g, '-'));
