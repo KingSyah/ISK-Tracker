@@ -1,924 +1,1024 @@
 /* ========================================
-   EVE Online ISK Audit — Professional JS
+   EVE Online ISK Audit — Professional CSS
    ======================================== */
 
-(function () {
-    'use strict';
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
-    // ── Category Mapping ──
-    const CATEGORY_MAP = {
-        'Bounty Prizes':            { icon: 'fas fa-skull-crossbones', color: '#10b981', type: 'income' },
-        'ESS Escrow Payment':       { icon: 'fas fa-satellite-dish',   color: '#3b82f6', type: 'income' },
-        'Player Donation':          { icon: 'fas fa-hand-holding-heart', color: '#8b5cf6', type: 'income' },
-        'Corporation Account Withdrawal': { icon: 'fas fa-building',   color: '#a855f7', type: 'income' },
-        'Market Transaction':       { icon: 'fas fa-store',            color: '#06b6d4', type: 'income' },
-        'Daily Goal Reward':        { icon: 'fas fa-star',             color: '#f59e0b', type: 'income' },
-        'Contract Reward Deposited':{ icon: 'fas fa-file-contract',    color: '#14b8a6', type: 'income' },
+/* --- CSS Variables --- */
+:root {
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
 
-        'Bounty Prize Corporation Tax': { icon: 'fas fa-landmark',     color: '#ef4444', type: 'expense' },
-        'Market Escrow':            { icon: 'fas fa-cart-shopping',    color: '#f97316', type: 'expense' },
-        'Jump Bridge Fee':          { icon: 'fas fa-bridge',           color: '#6366f1', type: 'expense' },
-        'Jump Clone Activation Fee':{ icon: 'fas fa-clone',            color: '#ec4899', type: 'expense' },
-        'Jump Clone Installation Fee': { icon: 'fas fa-download',      color: '#d946ef', type: 'expense' },
-        'Insurance':                { icon: 'fas fa-shield-halved',    color: '#f43f5e', type: 'expense' },
-        'Transaction Tax':          { icon: 'fas fa-receipt',          color: '#fb923c', type: 'expense' },
-        'Skill Purchase':           { icon: 'fas fa-graduation-cap',   color: '#a78bfa', type: 'expense' },
-        'Contract Brokers Fee':     { icon: 'fas fa-handshake',        color: '#78716c', type: 'expense' },
-    };
+    /* Dark theme (default — EVE vibes) */
+    --bg-primary: #0a0e1a;
+    --bg-secondary: #111827;
+    --bg-card: #1a1f2e;
+    --bg-card-hover: #1e2538;
+    --bg-elevated: #242b3d;
+    --bg-input: #151b2b;
 
-    function getCategory(desc) {
-        for (const [key, val] of Object.entries(CATEGORY_MAP)) {
-            if (desc.includes(key)) return { name: key, ...val };
-        }
-        return { name: desc, icon: 'fas fa-circle-question', color: '#64748b', type: 'unknown' };
+    --text-primary: #e8ecf4;
+    --text-secondary: #8892a8;
+    --text-muted: #5a6478;
+
+    --border-color: #2a3146;
+    --border-light: #1e2538;
+
+    --accent: #3b82f6;
+    --accent-glow: rgba(59, 130, 246, 0.15);
+    --accent-hover: #2563eb;
+
+    --income: #10b981;
+    --income-bg: rgba(16, 185, 129, 0.1);
+    --income-glow: rgba(16, 185, 129, 0.2);
+
+    --expense: #ef4444;
+    --expense-bg: rgba(239, 68, 68, 0.1);
+    --expense-glow: rgba(239, 68, 68, 0.2);
+
+    --warning: #f59e0b;
+    --info: #06b6d4;
+
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.3);
+    --shadow-lg: 0 8px 30px rgba(0,0,0,0.4);
+    --shadow-glow: 0 0 20px rgba(59, 130, 246, 0.1);
+
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 20px;
+
+    --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Light theme */
+body.light {
+    --bg-primary: #f0f2f5;
+    --bg-secondary: #ffffff;
+    --bg-card: #ffffff;
+    --bg-card-hover: #f8f9fa;
+    --bg-elevated: #f0f2f5;
+    --bg-input: #f0f2f5;
+
+    --text-primary: #111827;
+    --text-secondary: #6b7280;
+    --text-muted: #9ca3af;
+
+    --border-color: #e5e7eb;
+    --border-light: #f0f2f5;
+
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+    --shadow-lg: 0 8px 30px rgba(0,0,0,0.1);
+    --shadow-glow: 0 0 20px rgba(59, 130, 246, 0.05);
+}
+
+/* --- Reset & Base --- */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: var(--font-sans);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    line-height: 1.6;
+    min-height: 100vh;
+    overflow-x: hidden;
+    transition: background var(--transition), color var(--transition);
+}
+
+/* Ambient background effect */
+.ambient-bg {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background:
+        radial-gradient(ellipse 80% 60% at 20% 10%, rgba(59, 130, 246, 0.06), transparent),
+        radial-gradient(ellipse 60% 50% at 80% 80%, rgba(16, 185, 129, 0.04), transparent);
+    pointer-events: none;
+}
+
+body.light .ambient-bg {
+    background:
+        radial-gradient(ellipse 80% 60% at 20% 10%, rgba(59, 130, 246, 0.04), transparent),
+        radial-gradient(ellipse 60% 50% at 80% 80%, rgba(16, 185, 129, 0.02), transparent);
+}
+
+/* --- Top Navigation --- */
+.topbar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 2rem;
+    height: 64px;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+    backdrop-filter: blur(12px);
+    gap: 1rem;
+}
+
+.topbar-left, .topbar-right { display: flex; align-items: center; gap: 0.75rem; }
+.topbar-center { flex: 1; display: flex; justify-content: center; }
+
+.logo { display: flex; align-items: center; gap: 0.75rem; }
+.logo-icon {
+    width: 36px; height: 36px;
+    display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, var(--accent), #6366f1);
+    border-radius: 10px;
+    color: white;
+    font-size: 1rem;
+}
+.logo-title { font-weight: 800; font-size: 1.1rem; letter-spacing: -0.02em; }
+.logo-sub { display: block; font-size: 0.65rem; color: var(--text-muted); font-weight: 400; letter-spacing: 0.05em; text-transform: uppercase; }
+
+.char-badge {
+    display: flex; align-items: center; gap: 0.6rem;
+    padding: 0.35rem 1rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 100px;
+}
+.char-avatar {
+    width: 28px; height: 28px;
+    display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, #f59e0b, #ef4444);
+    border-radius: 50%;
+    color: white;
+    font-weight: 700;
+    font-size: 0.75rem;
+}
+.char-name { font-weight: 600; font-size: 0.85rem; }
+.char-corp { display: block; font-size: 0.65rem; color: var(--text-muted); }
+
+.period-selector { display: flex; gap: 2px; background: var(--bg-card); border-radius: var(--radius-sm); padding: 2px; }
+.period-btn {
+    padding: 0.35rem 0.75rem;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    font-weight: 500;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all var(--transition);
+    font-family: var(--font-sans);
+}
+.period-btn:hover { color: var(--text-primary); }
+.period-btn.active { background: var(--accent); color: white; }
+
+.icon-btn {
+    width: 36px; height: 36px;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--transition);
+    font-size: 0.9rem;
+}
+.icon-btn:hover { color: var(--accent); border-color: var(--accent); background: var(--accent-glow); }
+
+/* --- Main Content --- */
+.main-content {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 1.5rem 2rem 3rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+/* --- KPI Cards --- */
+.kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+}
+
+.kpi-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    transition: all var(--transition);
+    position: relative;
+    overflow: hidden;
+}
+.kpi-card:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--accent);
+    box-shadow: var(--shadow-glow);
+    transform: translateY(-1px);
+}
+
+.kpi-icon {
+    width: 44px; height: 44px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: var(--radius-md);
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+.kpi-balance .kpi-icon { background: var(--accent-glow); color: var(--accent); }
+.kpi-income .kpi-icon { background: var(--income-bg); color: var(--income); }
+.kpi-expense .kpi-icon { background: var(--expense-bg); color: var(--expense); }
+.kpi-net .kpi-icon { background: rgba(6, 182, 212, 0.1); color: var(--info); }
+
+.kpi-body { display: flex; flex-direction: column; min-width: 0; }
+.kpi-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 500; }
+.kpi-value { font-size: 1.5rem; font-weight: 800; font-family: var(--font-mono); letter-spacing: -0.02em; line-height: 1.2; }
+.kpi-sub { font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px; }
+
+.kpi-balance .kpi-value { color: var(--accent); }
+.kpi-income .kpi-value { color: var(--income); }
+.kpi-expense .kpi-value { color: var(--expense); }
+.kpi-net .kpi-value.positive { color: var(--income); }
+.kpi-net .kpi-value.negative { color: var(--expense); }
+
+/* --- Chart Cards --- */
+.charts-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 1rem;
+}
+.charts-row:nth-child(even) { grid-template-columns: 1fr 2fr; }
+
+.chart-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem;
+    transition: all var(--transition);
+}
+.chart-card:hover { border-color: rgba(59, 130, 246, 0.3); }
+
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border-light);
+}
+.chart-header h3 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.chart-header h3 i { color: var(--accent); font-size: 0.85rem; }
+.chart-hint { font-size: 0.75rem; color: var(--text-muted); }
+
+.chart-body { position: relative; height: 280px; }
+.chart-body canvas { width: 100% !important; height: 100% !important; }
+
+/* --- Category Section --- */
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+.section-header h2 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.section-header h2 i { color: var(--accent); }
+
+.category-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 0.75rem;
+}
+
+.cat-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 1rem 1.25rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all var(--transition);
+    cursor: default;
+}
+.cat-card:hover { background: var(--bg-card-hover); transform: translateX(2px); }
+
+.cat-left { display: flex; flex-direction: column; }
+.cat-name { font-weight: 600; font-size: 0.9rem; }
+.cat-count { font-size: 0.75rem; color: var(--text-muted); }
+.cat-amount {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+.cat-amount.income { color: var(--income); }
+.cat-amount.expense { color: var(--expense); }
+
+.cat-bar {
+    height: 3px;
+    border-radius: 2px;
+    margin-top: 0.5rem;
+    background: var(--border-light);
+    overflow: hidden;
+}
+.cat-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.6s ease;
+}
+.cat-bar-fill.income { background: var(--income); }
+.cat-bar-fill.expense { background: var(--expense); }
+
+/* --- Transaction Table --- */
+.table-section {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem;
+}
+
+.table-controls {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.search-box {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+.search-box i {
+    position: absolute;
+    left: 0.75rem;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+.search-box input {
+    padding: 0.5rem 0.75rem 0.5rem 2.25rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    background: var(--bg-input);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    font-size: 0.85rem;
+    width: 220px;
+    transition: all var(--transition);
+}
+.search-box input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.table-controls select {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    background: var(--bg-input);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+.table-controls select:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.table-wrapper {
+    overflow-x: auto;
+    margin: 1rem -0.25rem 0;
+}
+
+#txTable {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+}
+#txTable thead th {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    border-bottom: 2px solid var(--border-color);
+    white-space: nowrap;
+    position: sticky;
+    top: 0;
+    background: var(--bg-card);
+}
+#txTable thead th.sortable { cursor: pointer; user-select: none; }
+#txTable thead th.sortable:hover { color: var(--accent); }
+#txTable thead th.num-col { text-align: right; }
+
+#txTable tbody tr {
+    border-bottom: 1px solid var(--border-light);
+    transition: background var(--transition);
+}
+#txTable tbody tr:hover { background: var(--bg-card-hover); }
+
+#txTable tbody td {
+    padding: 0.65rem 1rem;
+    vertical-align: middle;
+}
+#txTable tbody td.num-col {
+    text-align: right;
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 0.85rem;
+}
+
+.tx-amount-positive { color: var(--income); }
+.tx-amount-negative { color: var(--expense); }
+
+.tx-category-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 100px;
+    font-size: 0.72rem;
+    font-weight: 500;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-color);
+    white-space: nowrap;
+}
+.tx-category-badge i { font-size: 0.7rem; }
+
+.table-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border-light);
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.pagination { display: flex; gap: 4px; }
+.page-btn {
+    width: 32px; height: 32px;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all var(--transition);
+    font-family: var(--font-sans);
+}
+.page-btn:hover { border-color: var(--accent); color: var(--accent); }
+.page-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+.page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* --- Modal --- */
+
+/* Import steps */
+.import-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    margin-bottom: 1rem;
+}
+.import-step {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+}
+.step-num {
+    width: 24px; height: 24px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 50%;
+    background: var(--accent);
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+.import-step kbd {
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-color);
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+}
+.import-note {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin-top: 0.5rem;
+}
+
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+}
+.modal-box {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    width: 100%;
+    max-width: 700px;
+    box-shadow: var(--shadow-lg);
+}
+.modal-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+.modal-head h3 { font-size: 1rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; }
+.modal-head h3 i { color: var(--accent); }
+.modal-close {
+    width: 32px; height: 32px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 1.5rem;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all var(--transition);
+}
+.modal-close:hover { background: var(--expense-bg); color: var(--expense); }
+
+.modal-body { padding: 1.5rem; }
+.modal-body p { color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 0.75rem; }
+.modal-body textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    background: var(--bg-input);
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    resize: vertical;
+    transition: border var(--transition);
+}
+.modal-body textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.modal-foot {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.btn {
+    padding: 0.5rem 1.25rem;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-sans);
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition);
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+.btn-primary { background: var(--accent); color: white; }
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-ghost { background: transparent; color: var(--text-secondary); border: 1px solid var(--border-color); }
+.btn-ghost:hover { border-color: var(--text-muted); color: var(--text-primary); }
+
+/* --- Footer --- */
+.app-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 2rem;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    border-top: 1px solid var(--border-light);
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* --- Scrollbar --- */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* --- Responsive --- */
+@media (max-width: 1200px) {
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .charts-row, .charts-row:nth-child(even) { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+    /* Compact topbar — single row, minimal */
+    .topbar {
+        padding: 0 0.75rem;
+        height: 48px;
+        gap: 0.5rem;
     }
+    .logo-title { font-size: 0.9rem; }
+    .logo-sub { display: none; }
+    .logo-icon { width: 28px; height: 28px; font-size: 0.8rem; border-radius: 8px; }
 
-    // ── State ──
-    let allTx = [];
-    let filteredTx = [];
-    let currentPage = 1;
-    const PAGE_SIZE = 30;
-    let sortCol = 'date';
-    let sortDir = 'desc';
-    let activePeriod = 'all';
+    /* Character badge — compact on mobile */
+    .topbar-center { display: flex; }
+    .char-badge { padding: 0.2rem 0.6rem; gap: 0.4rem; }
+    .char-avatar { width: 22px; height: 22px; font-size: 0.65rem; }
+    .char-name { font-size: 0.75rem; }
+    .char-corp { display: none; }
 
-    // ── DOM Refs ──
-    const $ = (s) => document.querySelector(s);
-    const $$ = (s) => document.querySelectorAll(s);
+    /* Compact period buttons */
+    .period-selector { padding: 1px; }
+    .period-btn { padding: 0.25rem 0.5rem; font-size: 0.7rem; }
 
-    // ── Parse ISK amount ──
-    function parseISK(s) {
-        if (typeof s !== 'string') return 0;
-        return parseInt(s.replace(/[,.\s]| ISK/g, ''), 10) || 0;
+    /* Smaller icon buttons */
+    .icon-btn { width: 30px; height: 30px; font-size: 0.8rem; }
+
+    /* Tighter content */
+    .main-content { padding: 0.75rem; gap: 0.75rem; }
+
+    /* KPI — 2 columns */
+    .kpi-grid { grid-template-columns: 1fr 1fr; }
+    .kpi-card { padding: 0.85rem; gap: 0.6rem; }
+    .kpi-icon { width: 32px; height: 32px; font-size: 0.85rem; }
+    .kpi-value { font-size: 1.1rem; }
+    .kpi-label { font-size: 0.65rem; }
+
+    /* Charts — single column, shorter */
+    .charts-row, .charts-row:nth-child(even) { grid-template-columns: 1fr; }
+    .chart-body { height: 200px; }
+    .chart-header h3 { font-size: 0.85rem; }
+
+    /* EVE overview — stack */
+    .eve-overview-body { flex-direction: column; padding: 1rem; gap: 1rem; }
+    .eve-donut-wrap { width: 180px; height: 180px; margin: 0 auto; }
+    .eve-donut-amount { font-size: 1.3rem; }
+    .eve-tabs { padding: 0 0.75rem; }
+    .eve-tab { padding: 0.6rem 0.75rem; font-size: 0.78rem; }
+
+    /* Category grid */
+    .category-grid { grid-template-columns: 1fr; }
+    .cat-card { padding: 0.75rem 1rem; }
+
+    /* Table controls */
+    .table-controls { flex-wrap: wrap; gap: 0.5rem; }
+    .search-box input { width: 100%; font-size: 0.8rem; }
+    .table-controls select { font-size: 0.8rem; padding: 0.4rem 0.6rem; }
+
+    /* Footer */
+    .footer { padding: 1.5rem 0.75rem 1rem; }
+    .footer-inner { padding: 0.5rem 1rem; }
+    .footer-text { font-size: 0.8rem; }
+    .footer-sub { font-size: 0.65rem; }
+}
+
+/* --- EVE-style Overview Section --- */
+.eve-overview {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+
+.eve-tabs {
+    display: flex;
+    border-bottom: 2px solid var(--border-color);
+    padding: 0 1.25rem;
+    gap: 0;
+}
+.eve-tab {
+    padding: 0.85rem 1.25rem;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-family: var(--font-sans);
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    position: relative;
+}
+.eve-tab:hover { color: var(--text-primary); }
+.eve-tab.active {
+    color: var(--accent);
+}
+.eve-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--accent);
+    border-radius: 2px 2px 0 0;
+}
+.eve-tab i { font-size: 0.78rem; }
+
+.eve-overview-body {
+    display: flex;
+    align-items: stretch;
+    padding: 1.5rem;
+    gap: 2.5rem;
+}
+
+.eve-donut-wrap {
+    position: relative;
+    width: 280px;
+    height: 280px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.eve-donut-wrap canvas {
+    width: 100% !important;
+    height: 100% !important;
+}
+.eve-donut-center {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+}
+.eve-donut-amount {
+    font-family: var(--font-mono);
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    letter-spacing: -0.02em;
+}
+.eve-donut-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-top: 2px;
+}
+
+.eve-summary-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+.eve-panel-title {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.eve-summary-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.65rem 0;
+}
+.eve-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.eve-dot.green { background: var(--income); box-shadow: 0 0 6px var(--income-glow); }
+.eve-dot.red { background: var(--expense); box-shadow: 0 0 6px var(--expense-glow); }
+.eve-summary-label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    flex: 1;
+}
+.eve-summary-value {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 1.05rem;
+}
+.income-row .eve-summary-value { color: var(--income); }
+.expense-row .eve-summary-value { color: var(--expense); }
+
+.eve-divider {
+    height: 1px;
+    background: var(--border-light);
+    margin: 0.5rem 0;
+}
+
+.eve-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin-top: 0.5rem;
+}
+.eve-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+}
+.eve-legend-color {
+    width: 10px; height: 10px;
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+.eve-legend-name {
+    flex: 1;
+    color: var(--text-secondary);
+}
+.eve-legend-pct {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    min-width: 42px;
+    text-align: right;
+}
+.eve-legend-amount {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    min-width: 80px;
+    text-align: right;
+}
+
+/* ── FLOATING KOPI BUTTON — Radar Style ── */
+.kopi-float {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 44px;
+    height: 44px;
+    background: #be1e2d;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    text-decoration: none;
+    cursor: pointer;
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 2px 8px rgba(190, 30, 45, 0.3);
+}
+.kopi-float:hover {
+    transform: scale(1.15);
+    box-shadow: 0 4px 16px rgba(190, 30, 45, 0.5);
+}
+.kopi-float:hover .kopi-ring {
+    animation: none;
+    opacity: 0;
+}
+.kopi-float img {
+    width: 22px;
+    height: 22px;
+    object-fit: contain;
+    display: block;
+    pointer-events: none;
+    position: relative;
+    z-index: 1;
+}
+
+/* Radar rings */
+.kopi-ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 1.5px solid rgba(190, 30, 45, 0.6);
+    animation: radar-ping 2.5s ease-out infinite;
+    pointer-events: none;
+}
+.kopi-r2 { animation-delay: 0.8s; }
+.kopi-r3 { animation-delay: 1.6s; }
+
+@keyframes radar-ping {
+    0%   { transform: scale(1); opacity: 0.8; border-width: 2px; }
+    50%  { opacity: 0.3; }
+    100% { transform: scale(2.2); opacity: 0; border-width: 0.5px; }
+}
+
+@media (max-width: 720px) {
+    .kopi-float {
+        bottom: 16px;
+        right: 16px;
+        width: 40px;
+        height: 40px;
     }
+    .kopi-float img { width: 20px; height: 20px; }
+}
+.footer {
+    text-align: center;
+    padding: 2rem 1rem 1.5rem;
+    margin-top: 1rem;
+}
+.footer-inner {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 1.5rem;
+    border-radius: 100px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    position: relative;
+}
+.footer-inner::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: 100px;
+    background: linear-gradient(135deg, var(--accent), var(--income), var(--accent));
+    z-index: -1;
+    opacity: 0.3;
+}
+.footer-crown {
+    font-size: 1.2rem;
+    animation: crownBob 2s ease-in-out infinite;
+    display: inline-block;
+}
+.footer-crown:nth-child(3) { animation-delay: 0.3s; }
+.footer-text {
+    font-weight: 700;
+    font-size: 0.9rem;
+    background: linear-gradient(90deg, var(--accent), var(--income), var(--warning), var(--accent));
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: shimmer 3s linear infinite;
+}
+.footer-sub {
+    margin-top: 0.75rem;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+.footer-sep { opacity: 0.4; }
 
-    function formatISK(n) {
-        if (n == null || isNaN(n)) return '0 ISK';
-        const abs = Math.abs(n);
-        const formatted = abs.toLocaleString('en-US', { maximumFractionDigits: 0 });
-        return (n < 0 ? '-' : '') + formatted + ' ISK';
+@keyframes crownBob {
+    0%, 100% { transform: translateY(0) rotate(-5deg); }
+    50% { transform: translateY(-3px) rotate(5deg); }
+}
+@keyframes shimmer {
+    0% { background-position: 0% center; }
+    100% { background-position: 200% center; }
+}
+
+/* --- Responsive for EVE Overview --- */
+@media (max-width: 900px) {
+    .eve-overview-body {
+        flex-direction: column;
+        align-items: center;
     }
-
-    function shortISK(n) {
-        const abs = Math.abs(n);
-        if (abs >= 1e9) return (n / 1e9).toFixed(2) + 'B';
-        if (abs >= 1e6) return (n / 1e6).toFixed(1) + 'M';
-        if (abs >= 1e3) return (n / 1e3).toFixed(0) + 'K';
-        return n.toString();
-    }
-
-    // ── Parse raw text ──
-    function parseRawData(text) {
-        const lines = text.replace(/\r/g, '').trim().split('\n');
-        const txs = [];
-        let detectedName = null;
-
-        for (const line of lines) {
-            if (!line.trim()) continue;
-            const parts = line.split('\t');
-            if (parts.length < 4) continue;
-
-            const dt = parts[0].trim();
-            const desc = parts[1].trim();
-            const amtStr = parts[2].trim();
-            const balStr = parts[3].trim();
-            const memo = parts.length >= 5 ? parts[4].trim() : '';
-
-            // Auto-detect character name from memo patterns
-            if (!detectedName && memo) {
-                // Pattern: "[r] KingSyah van deKills got bounty prizes..."
-                let m = memo.match(/\[r\]\s+([A-Z][a-zA-Z'.]+(?:\s+[a-zA-Z'.]+)+?)\s+(?:got|was|has)/);
-                if (!m) m = memo.match(/(?:to|from|by|paid from)\s+([A-Z][a-zA-Z'.]+(?:\s+[a-zA-Z'.]+)+?)(?:'s|,|\s+(?:to|for|account))/);
-                if (!m) m = memo.match(/authorized by:\s+([A-Z][a-zA-Z'.]+(?:\s+[a-zA-Z'.]+)+?)$/);
-                if (!m) m = memo.match(/KingSyah van deKills/i);
-                if (m) detectedName = typeof m === 'string' ? m : m[1].trim();
-            }
-
-            const date = new Date(dt.replace(/\./g, '-'));
-            const amount = parseISK(amtStr);
-            const balance = parseISK(balStr);
-
-            if (isNaN(date.getTime())) continue;
-            if (isNaN(amount) || amount === 0) continue;
-
-            const cat = getCategory(desc);
-            txs.push({ date, description: desc, amount, balance, memo, category: cat });
-        }
-
-        // Update character badge
-        if (detectedName) {
-            const nameEl = document.getElementById('charName');
-            const corpEl = document.getElementById('charCorp');
-            if (nameEl) nameEl.textContent = detectedName;
-            if (corpEl) corpEl.textContent = 'Wallet Audit Active';
-        }
-
-        return txs;
-    }
-
-    // ── Load embedded clipboard data (disabled — users paste their own data) ──
-    async function loadEmbeddedData() {
-        // No auto-load. Users import their own data from EVE Online.
-        return false;
-    }
-
-    function saveToStorage() {
-        try {
-            localStorage.setItem('isk_audit_data', JSON.stringify(allTx.map(t => ({
-                d: t.date.toISOString(),
-                desc: t.description,
-                amt: t.amount,
-                bal: t.balance,
-                memo: t.memo
-            }))));
-        } catch (e) { /* quota exceeded */ }
-    }
-
-    function loadFromStorage() {
-        try {
-            const raw = localStorage.getItem('isk_audit_data');
-            if (!raw) return false;
-            const arr = JSON.parse(raw);
-            if (!arr || !arr.length) return false;
-            allTx = arr.map(r => {
-                const desc = r.desc;
-                const cat = getCategory(desc);
-                return { date: new Date(r.d), description: desc, amount: r.amt, balance: r.bal, memo: r.memo, category: cat };
-            });
-            allTx.sort((a, b) => b.date - a.date);
-            return true;
-        } catch (e) { return false; }
-    }
-
-    // ── Period Filtering ──
-    function getFilteredByPeriod() {
-        if (activePeriod === 'all') return allTx;
-        const now = new Date('2026-04-23T00:00:00'); // Use last date in data
-        let cutoff;
-        if (activePeriod === '1d') cutoff = new Date(now - 86400000);
-        else if (activePeriod === '3d') cutoff = new Date(now - 3 * 86400000);
-        else if (activePeriod === '7d') cutoff = new Date(now - 7 * 86400000);
-        else return allTx;
-        return allTx.filter(t => t.date >= cutoff);
-    }
-
-    // ── Dashboard Update ──
-    function updateDashboard() {
-        const data = getFilteredByPeriod();
-        if (!data.length) {
-            $('#kpiBalance').textContent = '—';
-            $('#kpiIncome').textContent = '—';
-            $('#kpiExpense').textContent = '—';
-            $('#kpiNet').textContent = '—';
-            return;
-        }
-
-        // KPIs
-        const latestBalance = data[0].balance; // data is desc sorted
-        let totalIncome = 0, totalExpense = 0, incomeCount = 0, expenseCount = 0;
-        for (const t of data) {
-            if (t.amount > 0) { totalIncome += t.amount; incomeCount++; }
-            else { totalExpense += t.amount; expenseCount++; }
-        }
-        const net = totalIncome + totalExpense;
-
-        $('#kpiBalance').textContent = shortISK(latestBalance);
-        $('#kpiBalanceSub').textContent = formatISK(latestBalance);
-        $('#kpiIncome').textContent = shortISK(totalIncome);
-        $('#kpiIncomeCount').textContent = incomeCount + ' transactions';
-        $('#kpiExpense').textContent = shortISK(Math.abs(totalExpense));
-        $('#kpiExpenseCount').textContent = expenseCount + ' transactions';
-
-        const netEl = $('#kpiNet');
-        netEl.textContent = (net >= 0 ? '+' : '') + shortISK(net);
-        netEl.className = 'kpi-value ' + (net >= 0 ? 'positive' : 'negative');
-        const roi = totalIncome > 0 ? ((net / totalIncome) * 100).toFixed(1) : '0';
-        $('#kpiNetSub').textContent = `ROI: ${roi}%`;
-
-        renderCharts(data);
-        renderEveOverview(data);
-        renderCategories(data);
-        renderTable();
-    }
-
-    // ── EVE-style Overview Donut ──
-    let chartEveDonut;
-
-    function renderEveOverview(data) {
-        // Income breakdown by category
-        const incomeCats = {};
-        let totalIncome = 0, totalExpense = 0;
-        for (const t of data) {
-            if (t.amount > 0) {
-                totalIncome += t.amount;
-                const name = t.category.name;
-                incomeCats[name] = (incomeCats[name] || 0) + t.amount;
-            } else {
-                totalExpense += t.amount;
-            }
-        }
-
-        // Sort by amount desc
-        const sorted = Object.entries(incomeCats).sort((a, b) => b[1] - a[1]);
-        const labels = sorted.map(([k]) => k);
-        const values = sorted.map(([, v]) => v);
-        const colors = labels.map(l => CATEGORY_MAP[l]?.color || '#64748b');
-
-        // Center text
-        $('#eveDonutAmount').textContent = shortISK(totalIncome);
-        $('#eveIncomeVal').textContent = '+' + formatISK(totalIncome);
-        $('#eveExpenseVal').textContent = formatISK(totalExpense);
-
-        // Legend
-        const legendEl = $('#eveLegend');
-        legendEl.innerHTML = '';
-        for (let i = 0; i < labels.length; i++) {
-            const pct = totalIncome > 0 ? (values[i] / totalIncome * 100).toFixed(1) : '0';
-            const item = document.createElement('div');
-            item.className = 'eve-legend-item';
-            item.innerHTML = `
-                <span class="eve-legend-color" style="background:${colors[i]}"></span>
-                <span class="eve-legend-name">${labels[i]}</span>
-                <span class="eve-legend-pct">${pct}%</span>
-                <span class="eve-legend-amount">${shortISK(values[i])}</span>
-            `;
-            legendEl.appendChild(item);
-        }
-
-        // Donut chart
-        if (chartEveDonut) chartEveDonut.destroy();
-        chartEveDonut = new Chart($('#eveDonutChart'), {
-            type: 'doughnut',
-            data: {
-                labels: labels,
-                datasets: [{
-                    data: values,
-                    backgroundColor: colors,
-                    borderWidth: 0,
-                    hoverOffset: 8,
-                    borderRadius: 3,
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                cutout: '72%',
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        backgroundColor: 'rgba(17,24,39,0.95)',
-                        titleFont: { family: 'Inter', size: 12 },
-                        bodyFont: { family: 'JetBrains Mono', size: 11 },
-                        padding: 10,
-                        cornerRadius: 8,
-                        callbacks: {
-                            label: ctx => {
-                                const pct = totalIncome > 0 ? (ctx.parsed / totalIncome * 100).toFixed(1) : '0';
-                                return `${ctx.label}: ${formatISK(ctx.parsed)} (${pct}%)`;
-                            }
-                        }
-                    }
-                }
-            }
-        });
-    }
-
-    // ── Charts ──
-    let chartBalance, chartIncomePie, chartExpensePie, chartDailyNet;
-
-    const chartDefaults = () => {
-        const style = getComputedStyle(document.body);
-        return {
-            textColor: style.getPropertyValue('--text-secondary').trim(),
-            gridColor: style.getPropertyValue('--border-light').trim(),
-            cardBg: style.getPropertyValue('--bg-card').trim(),
-        };
-    };
-
-    function renderCharts(data) {
-        const { textColor, gridColor } = chartDefaults();
-
-        const commonOpts = {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    backgroundColor: 'rgba(17,24,39,0.95)',
-                    titleFont: { family: 'Inter', size: 12 },
-                    bodyFont: { family: 'JetBrains Mono', size: 11 },
-                    padding: 10,
-                    cornerRadius: 8,
-                    displayColors: true,
-                }
-            },
-        };
-
-        // ── Balance History (area chart) ──
-        const ascData = [...data].reverse();
-        if (chartBalance) chartBalance.destroy();
-        chartBalance = new Chart($('#balanceChart'), {
-            type: 'line',
-            data: {
-                labels: ascData.map(t => t.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })),
-                datasets: [{
-                    data: ascData.map(t => t.balance),
-                    borderColor: '#3b82f6',
-                    backgroundColor: 'rgba(59,130,246,0.08)',
-                    fill: true,
-                    tension: 0.3,
-                    borderWidth: 2,
-                    pointRadius: 0,
-                    pointHitRadius: 10,
-                }]
-            },
-            options: {
-                ...commonOpts,
-                scales: {
-                    x: {
-                        ticks: { color: textColor, font: { size: 10 }, maxTicksLimit: 10 },
-                        grid: { color: gridColor, drawBorder: false },
-                    },
-                    y: {
-                        ticks: {
-                            color: textColor,
-                            font: { family: 'JetBrains Mono', size: 10 },
-                            callback: v => shortISK(v),
-                        },
-                        grid: { color: gridColor, drawBorder: false },
-                    }
-                },
-                plugins: {
-                    ...commonOpts.plugins,
-                    tooltip: {
-                        ...commonOpts.plugins.tooltip,
-                        callbacks: {
-                            label: ctx => 'Balance: ' + formatISK(ctx.parsed.y),
-                        }
-                    }
-                }
-            }
-        });
-
-        // ── Income Pie ──
-        const incomeCats = {};
-        for (const t of data) {
-            if (t.amount > 0) {
-                const name = t.category.name;
-                incomeCats[name] = (incomeCats[name] || 0) + t.amount;
-            }
-        }
-        const incLabels = Object.keys(incomeCats);
-        const incValues = Object.values(incomeCats);
-        const incColors = incLabels.map(l => CATEGORY_MAP[l]?.color || '#64748b');
-
-        if (chartIncomePie) chartIncomePie.destroy();
-        chartIncomePie = new Chart($('#incomePieChart'), {
-            type: 'doughnut',
-            data: {
-                labels: incLabels,
-                datasets: [{ data: incValues, backgroundColor: incColors, borderWidth: 0, hoverOffset: 6 }]
-            },
-            options: {
-                ...commonOpts,
-                cutout: '60%',
-                plugins: {
-                    ...commonOpts.plugins,
-                    legend: { display: true, position: 'bottom', labels: { color: textColor, font: { size: 10 }, boxWidth: 10, padding: 8 } },
-                    tooltip: {
-                        ...commonOpts.plugins.tooltip,
-                        callbacks: { label: ctx => ctx.label + ': ' + formatISK(ctx.parsed) }
-                    }
-                }
-            }
-        });
-
-        // ── Expense Pie ──
-        const expCats = {};
-        for (const t of data) {
-            if (t.amount < 0) {
-                const name = t.category.name;
-                expCats[name] = (expCats[name] || 0) + Math.abs(t.amount);
-            }
-        }
-        const expLabels = Object.keys(expCats);
-        const expValues = Object.values(expCats);
-        const expColors = expLabels.map(l => CATEGORY_MAP[l]?.color || '#64748b');
-
-        if (chartExpensePie) chartExpensePie.destroy();
-        chartExpensePie = new Chart($('#expensePieChart'), {
-            type: 'doughnut',
-            data: {
-                labels: expLabels,
-                datasets: [{ data: expValues, backgroundColor: expColors, borderWidth: 0, hoverOffset: 6 }]
-            },
-            options: {
-                ...commonOpts,
-                cutout: '60%',
-                plugins: {
-                    ...commonOpts.plugins,
-                    legend: { display: true, position: 'bottom', labels: { color: textColor, font: { size: 10 }, boxWidth: 10, padding: 8 } },
-                    tooltip: {
-                        ...commonOpts.plugins.tooltip,
-                        callbacks: { label: ctx => ctx.label + ': ' + formatISK(ctx.parsed) }
-                    }
-                }
-            }
-        });
-
-        // ── Daily Net Flow (bar chart) ──
-        const dailyMap = {};
-        for (const t of data) {
-            const day = t.date.toISOString().split('T')[0];
-            if (!dailyMap[day]) dailyMap[day] = 0;
-            dailyMap[day] += t.amount;
-        }
-        const sortedDays = Object.keys(dailyMap).sort();
-        const netValues = sortedDays.map(d => dailyMap[d]);
-
-        if (chartDailyNet) chartDailyNet.destroy();
-        chartDailyNet = new Chart($('#dailyNetChart'), {
-            type: 'bar',
-            data: {
-                labels: sortedDays.map(d => {
-                    const dt = new Date(d);
-                    return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                }),
-                datasets: [{
-                    data: netValues,
-                    backgroundColor: netValues.map(v => v >= 0 ? 'rgba(16,185,129,0.7)' : 'rgba(239,68,68,0.7)'),
-                    borderRadius: 4,
-                    borderSkipped: false,
-                }]
-            },
-            options: {
-                ...commonOpts,
-                scales: {
-                    x: {
-                        ticks: { color: textColor, font: { size: 10 }, maxTicksLimit: 10 },
-                        grid: { display: false },
-                    },
-                    y: {
-                        ticks: {
-                            color: textColor,
-                            font: { family: 'JetBrains Mono', size: 10 },
-                            callback: v => shortISK(v),
-                        },
-                        grid: { color: gridColor, drawBorder: false },
-                    }
-                },
-                plugins: {
-                    ...commonOpts.plugins,
-                    tooltip: {
-                        ...commonOpts.plugins.tooltip,
-                        callbacks: { label: ctx => 'Net: ' + formatISK(ctx.parsed.y) }
-                    }
-                }
-            }
-        });
-    }
-
-    // ── Category Cards ──
-    function renderCategories(data) {
-        const cats = {};
-        for (const t of data) {
-            const name = t.category.name;
-            if (!cats[name]) cats[name] = { ...t.category, total: 0, count: 0 };
-            cats[name].total += t.amount;
-            cats[name].count++;
-        }
-
-        const sorted = Object.values(cats).sort((a, b) => Math.abs(b.total) - Math.abs(a.total));
-        const maxAbs = Math.max(...sorted.map(c => Math.abs(c.total)), 1);
-
-        const grid = $('#categoryGrid');
-        grid.innerHTML = '';
-        for (const c of sorted) {
-            const isIncome = c.total >= 0;
-            const pct = (Math.abs(c.total) / maxAbs * 100).toFixed(0);
-            const card = document.createElement('div');
-            card.className = 'cat-card';
-            card.innerHTML = `
-                <div class="cat-left">
-                    <span class="cat-name"><i class="${c.icon}" style="color:${c.color};margin-right:6px;font-size:0.8rem"></i>${c.name}</span>
-                    <span class="cat-count">${c.count} transactions</span>
-                    <div class="cat-bar"><div class="cat-bar-fill ${isIncome ? 'income' : 'expense'}" style="width:${pct}%"></div></div>
-                </div>
-                <span class="cat-amount ${isIncome ? 'income' : 'expense'}">${isIncome ? '+' : ''}${shortISK(c.total)}</span>
-            `;
-            grid.appendChild(card);
-        }
-    }
-
-    // ── Transaction Table ──
-    function applyFilters() {
-        const data = getFilteredByPeriod();
-        const search = ($('#searchInput').value || '').toLowerCase();
-        const typeF = $('#filterType').value;
-        const catF = $('#filterCategory').value;
-
-        filteredTx = data.filter(t => {
-            if (search && !t.description.toLowerCase().includes(search) && !t.memo.toLowerCase().includes(search)) return false;
-            if (typeF === 'income' && t.amount <= 0) return false;
-            if (typeF === 'expense' && t.amount >= 0) return false;
-            if (catF !== 'all' && t.category.name !== catF) return false;
-            return true;
-        });
-
-        // Sort
-        filteredTx.sort((a, b) => {
-            let va, vb;
-            if (sortCol === 'date') { va = a.date.getTime(); vb = b.date.getTime(); }
-            else if (sortCol === 'amount') { va = a.amount; vb = b.amount; }
-            else if (sortCol === 'category') { va = a.category.name; vb = b.category.name; }
-            else { va = 0; vb = 0; }
-            if (typeof va === 'string') return sortDir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
-            return sortDir === 'asc' ? va - vb : vb - va;
-        });
-
-        currentPage = 1;
-        renderTableBody();
-    }
-
-    function renderTableBody() {
-        const tbody = $('#txBody');
-        tbody.innerHTML = '';
-
-        const start = (currentPage - 1) * PAGE_SIZE;
-        const page = filteredTx.slice(start, start + PAGE_SIZE);
-
-        for (const t of page) {
-            const tr = document.createElement('tr');
-            const amtClass = t.amount >= 0 ? 'tx-amount-positive' : 'tx-amount-negative';
-            tr.innerHTML = `
-                <td>${t.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} ${t.date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</td>
-                <td><span class="tx-category-badge"><i class="${t.category.icon}" style="color:${t.category.color}"></i>${t.category.name}</span></td>
-                <td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-secondary);font-size:0.8rem" title="${t.memo}">${t.memo}</td>
-                <td class="num-col ${amtClass}">${t.amount >= 0 ? '+' : ''}${formatISK(t.amount)}</td>
-                <td class="num-col" style="color:var(--text-muted)">${formatISK(t.balance)}</td>
-            `;
-            tbody.appendChild(tr);
-        }
-
-        // Count
-        $('#txCount').textContent = `${filteredTx.length} transactions (page ${currentPage} of ${Math.ceil(filteredTx.length / PAGE_SIZE) || 1})`;
-
-        // Pagination
-        const totalPages = Math.ceil(filteredTx.length / PAGE_SIZE);
-        const pag = $('#pagination');
-        pag.innerHTML = '';
-
-        const addPageBtn = (label, pg, disabled = false, active = false) => {
-            const btn = document.createElement('button');
-            btn.className = 'page-btn' + (active ? ' active' : '');
-            btn.textContent = label;
-            btn.disabled = disabled;
-            if (!disabled) btn.addEventListener('click', () => { currentPage = pg; renderTableBody(); });
-            pag.appendChild(btn);
-        };
-
-        addPageBtn('‹', Math.max(1, currentPage - 1), currentPage === 1);
-        const range = [];
-        for (let i = 1; i <= totalPages; i++) {
-            if (i === 1 || i === totalPages || Math.abs(i - currentPage) <= 2) range.push(i);
-            else if (range[range.length - 1] !== '...') range.push('...');
-        }
-        for (const r of range) {
-            if (r === '...') {
-                const span = document.createElement('span');
-                span.textContent = '...';
-                span.style.cssText = 'display:flex;align-items:center;color:var(--text-muted);padding:0 4px;font-size:0.8rem';
-                pag.appendChild(span);
-            } else {
-                addPageBtn(r, r, false, r === currentPage);
-            }
-        }
-        addPageBtn('›', Math.min(totalPages, currentPage + 1), currentPage === totalPages);
-    }
-
-    function renderTable() {
-        applyFilters();
-    }
-
-    // ── Category filter dropdown ──
-    function populateCategoryFilter() {
-        const select = $('#filterCategory');
-        const cats = new Set(allTx.map(t => t.category.name));
-        select.innerHTML = '<option value="all">All Categories</option>';
-        for (const c of [...cats].sort()) {
-            const opt = document.createElement('option');
-            opt.value = c;
-            opt.textContent = c;
-            select.appendChild(opt);
-        }
-    }
-
-    // ── PDF Export ──
-    // ── Helper: add chart image with correct aspect ratio ──
-    function addChartImage(doc, chart, x, y, maxW, maxH) {
-        if (!chart) return y;
-        const imgData = chart.toBase64Image('image/png', 1.0);
-        // Get chart canvas aspect ratio
-        const canvas = chart.canvas;
-        const ratio = canvas.width / canvas.height;
-        let w = maxW;
-        let h = w / ratio;
-        if (h > maxH) { h = maxH; w = h * ratio; }
-        doc.addImage(imgData, 'PNG', x, y, w, h);
-        return y + h;
-    }
-
-    async function exportPDF() {
-        const data = getFilteredByPeriod();
-        if (!data.length) { alert('No data to export.'); return; }
-
-        alert('Generating PDF… This may take a moment.');
-
-        try {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-            const pw = doc.internal.pageSize.getWidth();
-            const ph = doc.internal.pageSize.getHeight();
-            const margin = 12;
-            const contentW = pw - margin * 2;
-
-            // ── PAGE 1: Header + Summary + Balance Chart ──
-
-            // Header bar
-            doc.setFillColor(26, 31, 46);
-            doc.rect(0, 0, pw, 18, 'F');
-            doc.setTextColor(232, 236, 244);
-            doc.setFontSize(16);
-            doc.setFont(undefined, 'bold');
-            doc.text('EVE Online ISK Audit Report', margin, 12);
-            doc.setFontSize(9);
-            doc.setFont(undefined, 'normal');
-            doc.text(`Generated: ${new Date().toLocaleString()}`, pw - margin, 12, { align: 'right' });
-
-            // Summary boxes
-            let totalIncome = 0, totalExpense = 0;
-            for (const t of data) {
-                if (t.amount > 0) totalIncome += t.amount;
-                else totalExpense += t.amount;
-            }
-            const net = totalIncome + totalExpense;
-            const latestBalance = data[0].balance;
-
-            const boxY = 22;
-            const boxH = 14;
-            const boxW = (contentW - 6) / 4;
-            const summaries = [
-                { label: 'Current Balance', value: formatISK(latestBalance), color: [59, 130, 246] },
-                { label: 'Total Income', value: '+' + formatISK(totalIncome), color: [16, 185, 129] },
-                { label: 'Total Expenses', value: formatISK(totalExpense), color: [239, 68, 68] },
-                { label: 'Net Flow', value: (net >= 0 ? '+' : '') + formatISK(net), color: net >= 0 ? [16, 185, 129] : [239, 68, 68] },
-            ];
-
-            summaries.forEach((s, i) => {
-                const bx = margin + i * (boxW + 2);
-                doc.setFillColor(245, 247, 250);
-                doc.roundedRect(bx, boxY, boxW, boxH, 2, 2, 'F');
-                doc.setFontSize(7);
-                doc.setTextColor(107, 114, 128);
-                doc.text(s.label, bx + 3, boxY + 5);
-                doc.setFontSize(10);
-                doc.setFont(undefined, 'bold');
-                doc.setTextColor(...s.color);
-                doc.text(s.value, bx + 3, boxY + 11);
-                doc.setFont(undefined, 'normal');
-            });
-
-            // Balance history chart (full width)
-            const chartY = boxY + boxH + 5;
-            const chartMaxH = ph - chartY - margin - 5;
-            addChartImage(doc, chartBalance, margin, chartY, contentW, chartMaxH);
-
-            // ── PAGE 2: Donut charts + Daily Net ──
-            doc.addPage();
-
-            // Header bar
-            doc.setFillColor(26, 31, 46);
-            doc.rect(0, 0, pw, 14, 'F');
-            doc.setTextColor(232, 236, 244);
-            doc.setFontSize(11);
-            doc.setFont(undefined, 'bold');
-            doc.text('Income & Expense Breakdown', margin, 10);
-
-            const rowY = 18;
-            const halfW = (contentW - 8) / 2;
-
-            // Income donut (left) — square
-            if (chartIncomePie) {
-                doc.setFontSize(9);
-                doc.setTextColor(16, 185, 129);
-                doc.setFont(undefined, 'bold');
-                doc.text('Income by Category', margin, rowY);
-                doc.setFont(undefined, 'normal');
-                addChartImage(doc, chartIncomePie, margin, rowY + 2, halfW, 70);
-            }
-
-            // Expense donut (right) — square
-            if (chartExpensePie) {
-                doc.setFontSize(9);
-                doc.setTextColor(239, 68, 68);
-                doc.setFont(undefined, 'bold');
-                doc.text('Expenses by Category', margin + halfW + 8, rowY);
-                doc.setFont(undefined, 'normal');
-                addChartImage(doc, chartExpensePie, margin + halfW + 8, rowY + 2, halfW, 70);
-            }
-
-            // Daily net flow (full width below donuts)
-            const dailyY = rowY + 78;
-            if (chartDailyNet) {
-                doc.setFontSize(9);
-                doc.setTextColor(107, 114, 128);
-                doc.setFont(undefined, 'bold');
-                doc.text('Daily Net Flow', margin, dailyY);
-                doc.setFont(undefined, 'normal');
-                addChartImage(doc, chartDailyNet, margin, dailyY + 2, contentW, 60);
-            }
-
-            // ── PAGE 3+: Transaction table ──
-            doc.addPage();
-
-            // Header
-            doc.setFillColor(26, 31, 46);
-            doc.rect(0, 0, pw, 14, 'F');
-            doc.setTextColor(232, 236, 244);
-            doc.setFontSize(11);
-            doc.setFont(undefined, 'bold');
-            doc.text('Transaction Ledger', margin, 10);
-
-            const tableBody = data.map(t => [
-                t.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-                t.category.name,
-                t.description,
-                (t.amount >= 0 ? '+' : '') + formatISK(t.amount),
-                formatISK(t.balance),
-            ]);
-
-            doc.autoTable({
-                head: [['Date', 'Category', 'Description', 'Amount', 'Balance']],
-                body: tableBody,
-                startY: 18,
-                margin: { left: margin, right: margin },
-                styles: { fontSize: 7, cellPadding: 1.5, overflow: 'linebreak', textColor: [55, 65, 81] },
-                headStyles: { fillColor: [26, 31, 46], textColor: [232, 236, 244], fontStyle: 'bold', fontSize: 7 },
-                alternateRowStyles: { fillColor: [248, 250, 252] },
-                columnStyles: {
-                    0: { cellWidth: 22 },
-                    1: { cellWidth: 35 },
-                    2: { cellWidth: 'auto' },
-                    3: { cellWidth: 30, halign: 'right', fontStyle: 'bold' },
-                    4: { cellWidth: 35, halign: 'right' },
-                },
-                didParseCell: (data) => {
-                    // Color amount column
-                    if (data.section === 'body' && data.column.index === 3) {
-                        const raw = data.cell.raw;
-                        if (raw.startsWith('+')) data.cell.styles.textColor = [16, 185, 129];
-                        else data.cell.styles.textColor = [239, 68, 68];
-                    }
-                },
-                didDrawPage: (data) => {
-                    // Footer
-                    doc.setFontSize(7);
-                    doc.setTextColor(150);
-                    doc.text(
-                        `ISK Audit Report — Page ${doc.internal.getNumberOfPages()}`,
-                        pw / 2, ph - 5, { align: 'center' }
-                    );
-                }
-            });
-
-            doc.save(`ISK_Audit_${new Date().toISOString().split('T')[0]}.pdf`);
-        } catch (err) {
-            console.error('PDF error:', err);
-            alert('Failed to generate PDF. Check console for details.');
-        }
-    }
-
-    // ── Theme ──
-    function toggleTheme() {
-        const body = document.body;
-        const isLight = body.classList.toggle('light');
-        localStorage.setItem('isk_theme', isLight ? 'light' : 'dark');
-        const icon = $('#themeToggle i');
-        icon.className = isLight ? 'fas fa-sun' : 'fas fa-moon';
-        // Re-render charts for color update
-        updateDashboard();
-    }
-
-    function applyTheme() {
-        const saved = localStorage.getItem('isk_theme');
-        if (saved === 'light') {
-            document.body.classList.add('light');
-            $('#themeToggle i').className = 'fas fa-sun';
-        }
-    }
-
-    // ── Event Listeners ──
-    function init() {
-        applyTheme();
-
-        // Load data
-        const hasStorage = loadFromStorage();
-        if (!hasStorage) {
-            // No saved data — show import modal to guide user
-            populateCategoryFilter();
-            updateDashboard();
-            document.getElementById('importModal').style.display = 'flex';
-        } else {
-            populateCategoryFilter();
-            updateDashboard();
-        }
-
-        // Theme toggle
-        $('#themeToggle').addEventListener('click', toggleTheme);
-
-        // Period buttons
-        $$('.period-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                $$('.period-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                activePeriod = btn.dataset.period;
-                updateDashboard();
-            });
-        });
-
-        // Search & filters
-        $('#searchInput').addEventListener('input', () => { currentPage = 1; applyFilters(); });
-        $('#filterType').addEventListener('change', () => { currentPage = 1; applyFilters(); });
-        $('#filterCategory').addEventListener('change', () => { currentPage = 1; applyFilters(); });
-
-        // Sort
-        $$('.sortable').forEach(th => {
-            th.addEventListener('click', () => {
-                const col = th.dataset.sort;
-                if (sortCol === col) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
-                else { sortCol = col; sortDir = 'desc'; }
-                applyFilters();
-            });
-        });
-
-        // PDF
-        $('#pdfBtn').addEventListener('click', exportPDF);
-
-        // Import button
-        $('#importBtn').addEventListener('click', () => {
-            document.getElementById('importModal').style.display = 'flex';
-        });
-
-        // Import confirm button
-        document.getElementById('importConfirmBtn').addEventListener('click', function() {
-            const raw = document.getElementById('importTextarea').value;
-            if (!raw.trim()) { alert('Please paste your wallet data first.'); return; }
-
-            const newTx = parseRawData(raw);
-            if (!newTx.length) { alert('No valid transactions found. Check the format.'); return; }
-
-            // Merge & deduplicate
-            allTx.push(...newTx);
-            const seen = new Set();
-            const unique = [];
-            for (const t of allTx) {
-                const key = t.date.getTime() + '|' + t.amount + '|' + t.balance;
-                if (!seen.has(key)) { seen.add(key); unique.push(t); }
-            }
-            allTx = unique.sort((a, b) => b.date - a.date);
-            saveToStorage();
-
-            // Close modal & refresh
-            document.getElementById('importModal').style.display = 'none';
-            document.getElementById('importTextarea').value = '';
-            populateCategoryFilter();
-            updateDashboard();
-
-            alert(newTx.length + ' transactions imported successfully.');
-        });
-
-        // Reset button
-        $('#resetDataBtn').addEventListener('click', () => {
-            if (confirm('Clear all transaction data? This cannot be undone.')) {
-                allTx = [];
-                localStorage.removeItem('isk_audit_data');
-                populateCategoryFilter();
-                updateDashboard();
-            }
-        });
-
-        // EVE tabs (cosmetic - scrolls to sections)
-        $$('.eve-tab').forEach(tab => {
-            tab.addEventListener('click', () => {
-                $$('.eve-tab').forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-            });
-        });
-
-        // Copyright year auto-update
-        const copyrightEl = document.getElementById('copyright-text');
-        if (copyrightEl) copyrightEl.textContent = `© ${new Date().getFullYear()} ISK Tracker`;
-    }
-
-    document.addEventListener('DOMContentLoaded', init);
-})();
+    .eve-donut-wrap { width: 220px; height: 220px; }
+    .eve-donut-amount { font-size: 1.4rem; }
+    .eve-summary-panel { width: 100%; }
+}
+
+/* --- Animations --- */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.kpi-card, .chart-card, .cat-card, .table-section {
+    animation: fadeIn 0.4s ease both;
+}
+.kpi-card:nth-child(1) { animation-delay: 0.05s; }
+.kpi-card:nth-child(2) { animation-delay: 0.1s; }
+.kpi-card:nth-child(3) { animation-delay: 0.15s; }
+.kpi-card:nth-child(4) { animation-delay: 0.2s; }
