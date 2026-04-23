@@ -753,7 +753,6 @@
     function addChartImage(doc, chart, x, y, maxW, maxH) {
         if (!chart) return y;
         const imgData = chart.toBase64Image('image/png', 1.0);
-        // Get chart canvas aspect ratio
         const canvas = chart.canvas;
         const ratio = canvas.width / canvas.height;
         let w = maxW;
@@ -763,11 +762,41 @@
         return y + h;
     }
 
+    // ── Helper: draw consistent page header bar ──
+    function drawPageHeader(doc, title, pw, margin) {
+        doc.setFillColor(26, 31, 46);
+        doc.rect(0, 0, pw, 16, 'F');
+        doc.setTextColor(232, 236, 244);
+        doc.setFontSize(12);
+        doc.setFont(undefined, 'bold');
+        doc.text(title, margin, 11);
+        doc.setFont(undefined, 'normal');
+    }
+
+    // ── Helper: draw page footer with page number ──
+    function drawPageFooter(doc, pw, ph) {
+        doc.setFontSize(7);
+        doc.setTextColor(150, 150, 150);
+        doc.text(
+            'ISK Audit Report — Page ' + doc.internal.getNumberOfPages(),
+            pw / 2, ph - 5, { align: 'center' }
+        );
+        doc.setTextColor(55, 65, 81);
+    }
+
     async function exportPDF() {
         const data = getFilteredByPeriod();
         if (!data.length) { alert('No data to export.'); return; }
 
-        alert('Generating PDF… This may take a moment.');
+        // Show loading indicator instead of alert
+        var loadingOverlay = document.createElement('div');
+        loadingOverlay.id = 'pdfLoading';
+        loadingOverlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;';
+        loadingOverlay.innerHTML = '<div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:16px;padding:2rem 3rem;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,0.4)">' +
+            '<div style="font-size:1.1rem;font-weight:600;color:var(--text-primary);margin-bottom:0.5rem"><i class="fas fa-file-pdf" style="color:#ef4444;margin-right:0.5rem"></i>Generating PDF…</div>' +
+            '<div style="font-size:0.8rem;color:var(--text-muted)">This may take a moment</div>' +
+            '</div>';
+        document.body.appendChild(loadingOverlay);
 
         // Temporarily show analysis tab so charts render properly
         var analysisPanel = document.querySelector('.tab-panel.tab-analysis');
@@ -775,7 +804,6 @@
         var wasAnalysisActive = analysisPanel && analysisPanel.classList.contains('active');
         if (!wasAnalysisActive && analysisPanel) {
             analysisPanel.classList.add('active');
-            // Resize charts to render in now-visible container
             if (chartBalance) chartBalance.resize();
             if (chartIncomePie) chartIncomePie.resize();
             if (chartExpensePie) chartExpensePie.resize();
@@ -787,169 +815,233 @@
             const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
             const pw = doc.internal.pageSize.getWidth();
             const ph = doc.internal.pageSize.getHeight();
-            const margin = 12;
+            const margin = 14;
             const contentW = pw - margin * 2;
+            const headerH = 16;
 
-            // ── PAGE 1: Header + Summary + Balance Chart ──
-
-            // Header bar
-            doc.setFillColor(26, 31, 46);
-            doc.rect(0, 0, pw, 18, 'F');
-            doc.setTextColor(232, 236, 244);
-            doc.setFontSize(16);
-            doc.setFont(undefined, 'bold');
-            doc.text('EVE Online ISK Audit Report', margin, 12);
-            doc.setFontSize(9);
-            doc.setFont(undefined, 'normal');
-            doc.text(`Generated: ${new Date().toLocaleString()}`, pw - margin, 12, { align: 'right' });
-
-            // Summary boxes
-            let totalIncome = 0, totalExpense = 0;
+            // ── Calculate summary data once ──
+            let totalIncome = 0, totalExpense = 0, incomeCount = 0, expenseCount = 0;
             for (const t of data) {
-                if (t.amount > 0) totalIncome += t.amount;
-                else totalExpense += t.amount;
+                if (t.amount > 0) { totalIncome += t.amount; incomeCount++; }
+                else { totalExpense += t.amount; expenseCount++; }
             }
             const net = totalIncome + totalExpense;
             const latestBalance = data[0].balance;
+            const roi = totalIncome > 0 ? ((net / totalIncome) * 100).toFixed(1) : '0';
 
-            const boxY = 22;
-            const boxH = 14;
-            const boxW = (contentW - 6) / 4;
-            const summaries = [
+            // Category analysis data
+            const catMap = {};
+            for (const t of data) {
+                const name = t.category.name;
+                if (!catMap[name]) catMap[name] = { ...t.category, total: 0, count: 0 };
+                catMap[name].total += t.amount;
+                catMap[name].count++;
+            }
+            const catSorted = Object.values(catMap).sort((a, b) => Math.abs(b.total) - Math.abs(a.total));
+
+            // ═══════════════════════════════════════════
+            // PAGE 1: Executive Summary + Balance History
+            // ═══════════════════════════════════════════
+            drawPageHeader(doc, 'EVE Online ISK Audit Report', pw, margin);
+
+            // Date & period info
+            doc.setFontSize(8);
+            doc.setTextColor(107, 114, 128);
+            var periodLabel = activePeriod === 'all' ? 'All Time' : activePeriod.toUpperCase();
+            doc.text('Generated: ' + new Date().toLocaleString() + '  |  Period: ' + periodLabel, pw - margin, 11, { align: 'right' });
+
+            // Summary boxes — 2 rows for better readability
+            var boxY = 20;
+            var boxH = 16;
+            var boxGap = 3;
+            var boxW = (contentW - boxGap * 3) / 4;
+
+            var summaries = [
                 { label: 'Current Balance', value: formatISK(latestBalance), color: [59, 130, 246] },
-                { label: 'Total Income', value: '+' + formatISK(totalIncome), color: [16, 185, 129] },
-                { label: 'Total Expenses', value: formatISK(totalExpense), color: [239, 68, 68] },
-                { label: 'Net Flow', value: (net >= 0 ? '+' : '') + formatISK(net), color: net >= 0 ? [16, 185, 129] : [239, 68, 68] },
+                { label: 'Total Income', value: '+' + formatISK(totalIncome), color: [16, 185, 129], sub: incomeCount + ' transactions' },
+                { label: 'Total Expenses', value: formatISK(totalExpense), color: [239, 68, 68], sub: expenseCount + ' transactions' },
+                { label: 'Net Flow', value: (net >= 0 ? '+' : '') + formatISK(net), color: net >= 0 ? [16, 185, 129] : [239, 68, 68], sub: 'ROI: ' + roi + '%' },
             ];
 
-            summaries.forEach((s, i) => {
-                const bx = margin + i * (boxW + 2);
+            summaries.forEach(function (s, i) {
+                var bx = margin + i * (boxW + boxGap);
                 doc.setFillColor(245, 247, 250);
                 doc.roundedRect(bx, boxY, boxW, boxH, 2, 2, 'F');
+                // Left accent bar
+                doc.setFillColor(...s.color);
+                doc.rect(bx, boxY, 2, boxH, 'F');
+                // Label
                 doc.setFontSize(7);
                 doc.setTextColor(107, 114, 128);
-                doc.text(s.label, bx + 3, boxY + 5);
-                doc.setFontSize(10);
+                doc.text(s.label, bx + 5, boxY + 5);
+                // Value
+                doc.setFontSize(11);
                 doc.setFont(undefined, 'bold');
                 doc.setTextColor(...s.color);
-                doc.text(s.value, bx + 3, boxY + 11);
+                doc.text(s.value, bx + 5, boxY + 12);
                 doc.setFont(undefined, 'normal');
+                // Sub text
+                if (s.sub) {
+                    doc.setFontSize(6.5);
+                    doc.setTextColor(107, 114, 128);
+                    doc.text(s.sub, bx + boxW - 3, boxY + 12, { align: 'right' });
+                }
             });
 
+            // Transaction count
+            doc.setFontSize(8);
+            doc.setTextColor(107, 114, 128);
+            doc.text('Total: ' + data.length + ' transactions', margin, boxY + boxH + 5);
+
             // Balance history chart (full width)
-            const chartY = boxY + boxH + 5;
-            const chartMaxH = ph - chartY - margin - 5;
+            var chartY = boxY + boxH + 8;
+            var chartMaxH = ph - chartY - margin - 8;
             addChartImage(doc, chartBalance, margin, chartY, contentW, chartMaxH);
 
-            // ── PAGE 2: Donut charts + Daily Net ──
+            drawPageFooter(doc, pw, ph);
+
+            // ═══════════════════════════════════════
+            // PAGE 2: Income & Expense Breakdown
+            // ═══════════════════════════════════════
             doc.addPage();
+            drawPageHeader(doc, 'Income & Expense Breakdown', pw, margin);
 
-            // Header bar
-            doc.setFillColor(26, 31, 46);
-            doc.rect(0, 0, pw, 14, 'F');
-            doc.setTextColor(232, 236, 244);
-            doc.setFontSize(11);
-            doc.setFont(undefined, 'bold');
-            doc.text('Income & Expense Breakdown', margin, 10);
+            var rowY = 20;
+            var donutSize = 55; // mm — compact donut charts
+            var donutGap = 12;
+            var halfW = (contentW - donutGap) / 2;
 
-            const rowY = 18;
-            const halfW = (contentW - 8) / 2;
-
-            // Income donut (left) — square
+            // Income donut (left)
             if (chartIncomePie) {
                 doc.setFontSize(9);
                 doc.setTextColor(16, 185, 129);
                 doc.setFont(undefined, 'bold');
                 doc.text('Income by Category', margin, rowY);
                 doc.setFont(undefined, 'normal');
-                addChartImage(doc, chartIncomePie, margin, rowY + 2, halfW, 70);
+                addChartImage(doc, chartIncomePie, margin + (halfW - donutSize) / 2, rowY + 2, donutSize, donutSize);
             }
 
-            // Expense donut (right) — square
+            // Expense donut (right)
             if (chartExpensePie) {
                 doc.setFontSize(9);
                 doc.setTextColor(239, 68, 68);
                 doc.setFont(undefined, 'bold');
-                doc.text('Expenses by Category', margin + halfW + 8, rowY);
+                doc.text('Expenses by Category', margin + halfW + donutGap, rowY);
                 doc.setFont(undefined, 'normal');
-                addChartImage(doc, chartExpensePie, margin + halfW + 8, rowY + 2, halfW, 70);
+                addChartImage(doc, chartExpensePie, margin + halfW + donutGap + (halfW - donutSize) / 2, rowY + 2, donutSize, donutSize);
             }
 
-            // Daily net flow (full width below donuts)
-            const dailyY = rowY + 78;
+            // Category summary table between donuts and daily net
+            var catTableY = rowY + donutSize + 8;
+            var catTableData = catSorted.map(function (c) {
+                var isInc = c.total >= 0;
+                var pct = (Math.abs(c.total) / (totalIncome + Math.abs(totalExpense)) * 100).toFixed(1);
+                return [
+                    c.name,
+                    c.count.toString(),
+                    (isInc ? '+' : '') + formatISK(c.total),
+                    pct + '%'
+                ];
+            });
+
+            doc.autoTable({
+                head: [['Category', 'Count', 'Amount', '% of Total']],
+                body: catTableData,
+                startY: catTableY,
+                margin: { left: margin, right: margin },
+                styles: { fontSize: 7, cellPadding: 1.5, overflow: 'linebreak', textColor: [55, 65, 81] },
+                headStyles: { fillColor: [26, 31, 46], textColor: [232, 236, 244], fontStyle: 'bold', fontSize: 7 },
+                alternateRowStyles: { fillColor: [248, 250, 252] },
+                columnStyles: {
+                    0: { cellWidth: 'auto' },
+                    1: { cellWidth: 18, halign: 'center' },
+                    2: { cellWidth: 40, halign: 'right', fontStyle: 'bold' },
+                    3: { cellWidth: 22, halign: 'right' },
+                },
+                didParseCell: function (d) {
+                    if (d.section === 'body' && d.column.index === 2) {
+                        var raw = d.cell.raw;
+                        if (raw.startsWith('+')) d.cell.styles.textColor = [16, 185, 129];
+                        else d.cell.styles.textColor = [239, 68, 68];
+                    }
+                },
+            });
+
+            // Daily net flow — below category table
+            var dailyY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 6 : catTableY + 40;
             if (chartDailyNet) {
                 doc.setFontSize(9);
                 doc.setTextColor(107, 114, 128);
                 doc.setFont(undefined, 'bold');
                 doc.text('Daily Net Flow', margin, dailyY);
                 doc.setFont(undefined, 'normal');
-                addChartImage(doc, chartDailyNet, margin, dailyY + 2, contentW, 60);
+                var dailyMaxH = ph - dailyY - margin - 10;
+                addChartImage(doc, chartDailyNet, margin, dailyY + 2, contentW, Math.min(dailyMaxH, 65));
             }
 
-            // ── PAGE 3+: Transaction table ──
+            drawPageFooter(doc, pw, ph);
+
+            // ═══════════════════════════════════════
+            // PAGE 3+: Transaction Ledger
+            // ═══════════════════════════════════════
             doc.addPage();
+            drawPageHeader(doc, 'Transaction Ledger', pw, margin);
 
-            // Header
-            doc.setFillColor(26, 31, 46);
-            doc.rect(0, 0, pw, 14, 'F');
-            doc.setTextColor(232, 236, 244);
-            doc.setFontSize(11);
-            doc.setFont(undefined, 'bold');
-            doc.text('Transaction Ledger', margin, 10);
+            doc.setFontSize(8);
+            doc.setTextColor(107, 114, 128);
+            doc.text(data.length + ' transactions  |  Sorted by date (newest first)', pw - margin, 11, { align: 'right' });
 
-            const tableBody = data.map(t => [
-                t.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-                t.category.name,
-                t.description,
-                (t.amount >= 0 ? '+' : '') + formatISK(t.amount),
-                formatISK(t.balance),
-            ]);
+            var tableBody = data.map(function (t) {
+                return [
+                    t.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+                    t.category.name,
+                    t.memo || t.description,
+                    (t.amount >= 0 ? '+' : '') + formatISK(t.amount),
+                    formatISK(t.balance),
+                ];
+            });
 
             doc.autoTable({
                 head: [['Date', 'Category', 'Description', 'Amount', 'Balance']],
                 body: tableBody,
-                startY: 18,
+                startY: 20,
                 margin: { left: margin, right: margin },
                 styles: { fontSize: 7, cellPadding: 1.5, overflow: 'linebreak', textColor: [55, 65, 81] },
                 headStyles: { fillColor: [26, 31, 46], textColor: [232, 236, 244], fontStyle: 'bold', fontSize: 7 },
                 alternateRowStyles: { fillColor: [248, 250, 252] },
                 columnStyles: {
-                    0: { cellWidth: 22 },
-                    1: { cellWidth: 35 },
+                    0: { cellWidth: 24 },
+                    1: { cellWidth: 38 },
                     2: { cellWidth: 'auto' },
-                    3: { cellWidth: 30, halign: 'right', fontStyle: 'bold' },
-                    4: { cellWidth: 35, halign: 'right' },
+                    3: { cellWidth: 32, halign: 'right', fontStyle: 'bold' },
+                    4: { cellWidth: 38, halign: 'right' },
                 },
-                didParseCell: (data) => {
-                    // Color amount column
-                    if (data.section === 'body' && data.column.index === 3) {
-                        const raw = data.cell.raw;
-                        if (raw.startsWith('+')) data.cell.styles.textColor = [16, 185, 129];
-                        else data.cell.styles.textColor = [239, 68, 68];
+                didParseCell: function (d) {
+                    if (d.section === 'body' && d.column.index === 3) {
+                        var raw = d.cell.raw;
+                        if (raw.startsWith('+')) d.cell.styles.textColor = [16, 185, 129];
+                        else d.cell.styles.textColor = [239, 68, 68];
                     }
                 },
-                didDrawPage: (data) => {
-                    // Footer
-                    doc.setFontSize(7);
-                    doc.setTextColor(150);
-                    doc.text(
-                        `ISK Audit Report — Page ${doc.internal.getNumberOfPages()}`,
-                        pw / 2, ph - 5, { align: 'center' }
-                    );
-                }
+                didDrawPage: function () {
+                    drawPageFooter(doc, pw, ph);
+                },
             });
 
-            doc.save(`ISK_Audit_${new Date().toISOString().split('T')[0]}.pdf`);
+            doc.save('ISK_Audit_' + new Date().toISOString().split('T')[0] + '.pdf');
         } catch (err) {
             console.error('PDF error:', err);
             alert('Failed to generate PDF. Check console for details.');
         }
 
-        // Restore tab state — go back to overview if analysis was not originally active
+        // Remove loading overlay
+        if (loadingOverlay && loadingOverlay.parentNode) loadingOverlay.parentNode.removeChild(loadingOverlay);
+
+        // Restore tab state
         if (!wasAnalysisActive && analysisPanel) {
             analysisPanel.classList.remove('active');
             if (overviewPanel) overviewPanel.classList.add('active');
-            document.querySelectorAll('.eve-tab').forEach(function(t) { t.classList.remove('active'); });
+            document.querySelectorAll('.eve-tab').forEach(function (t) { t.classList.remove('active'); });
             var overviewTab = document.querySelector('.eve-tab[data-tab="overview"]');
             if (overviewTab) overviewTab.classList.add('active');
         }
