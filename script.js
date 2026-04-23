@@ -866,6 +866,43 @@
         }
     }
 
+    // ── Data Restore Notice ──
+    function showDataNotice(count) {
+        // Remove existing notice if any
+        var existing = document.getElementById('dataNotice');
+        if (existing) existing.remove();
+
+        var notice = document.createElement('div');
+        notice.id = 'dataNotice';
+        notice.style.cssText = 'position:sticky;top:0;z-index:200;display:flex;align-items:center;justify-content:center;gap:0.75rem;padding:0.6rem 1rem;background:linear-gradient(135deg,#1e3a5f,#1a2744);border-bottom:1px solid rgba(59,130,246,0.3);font-size:0.85rem;color:#e8ecf4;flex-wrap:wrap;text-align:center;';
+        notice.innerHTML = '<i class="fas fa-database" style="color:#3b82f6"></i>' +
+            '<span>Data sebelumnya ditemukan: <strong>' + count + ' transaksi</strong></span>' +
+            '<button id="noticeContinue" style="padding:0.3rem 0.8rem;border-radius:6px;border:1px solid #3b82f6;background:transparent;color:#3b82f6;cursor:pointer;font-family:var(--font-sans);font-size:0.8rem;font-weight:500;transition:all 0.2s">Lanjutkan</button>' +
+            '<button id="noticeClear" style="padding:0.3rem 0.8rem;border-radius:6px;border:1px solid #ef4444;background:transparent;color:#ef4444;cursor:pointer;font-family:var(--font-sans);font-size:0.8rem;font-weight:500;transition:all 0.2s">Hapus Data</button>';
+
+        // Insert after topbar
+        var topbar = document.querySelector('.topbar');
+        if (topbar && topbar.nextSibling) {
+            topbar.parentNode.insertBefore(notice, topbar.nextSibling);
+        } else {
+            document.body.prepend(notice);
+        }
+
+        document.getElementById('noticeContinue').addEventListener('click', function() {
+            notice.remove();
+        });
+
+        document.getElementById('noticeClear').addEventListener('click', function() {
+            if (confirm('Hapus semua data transaksi? Tindakan ini tidak dapat dibatalkan.')) {
+                allTx = [];
+                localStorage.removeItem('isk_audit_data');
+                populateCategoryFilter();
+                updateDashboard();
+                notice.remove();
+            }
+        });
+    }
+
     // ── Event Listeners ──
     function init() {
         applyTheme();
@@ -880,6 +917,7 @@
         } else {
             populateCategoryFilter();
             updateDashboard();
+            showDataNotice(allTx.length);
         }
 
         // Helper to safely bind events
@@ -964,6 +1002,10 @@
             populateCategoryFilter();
             updateDashboard();
 
+            // Remove data notice if visible
+            var notice = document.getElementById('dataNotice');
+            if (notice) notice.remove();
+
             alert(newTx.length + ' transactions imported successfully.');
         });
 
@@ -974,6 +1016,8 @@
                 localStorage.removeItem('isk_audit_data');
                 populateCategoryFilter();
                 updateDashboard();
+                var notice = document.getElementById('dataNotice');
+                if (notice) notice.remove();
             }
         });
 
