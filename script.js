@@ -72,6 +72,7 @@
         const lines = text.replace(/\r/g, '').trim().split('\n');
         const txs = [];
         let detectedName = null;
+
         for (const line of lines) {
             if (!line.trim()) continue;
             const parts = line.split('\t');
@@ -83,10 +84,14 @@
             const balStr = parts[3].trim();
             const memo = parts.length >= 5 ? parts[4].trim() : '';
 
-            // Auto-detect character name from memo
+            // Auto-detect character name from memo patterns
             if (!detectedName && memo) {
-                const nameMatch = memo.match(/(?:to|from|by|paid from|deposited into)\s+([A-Z][a-zA-Z'.]+(?:\s+[a-zA-Z'.]+)+?)(?:'s|,|\s+(?:to|for|got|paid|transferred))/);
-                if (nameMatch) detectedName = nameMatch[1].trim();
+                // Pattern: "[r] KingSyah van deKills got bounty prizes..."
+                let m = memo.match(/\[r\]\s+([A-Z][a-zA-Z'.]+(?:\s+[a-zA-Z'.]+)+?)\s+(?:got|was|has)/);
+                if (!m) m = memo.match(/(?:to|from|by|paid from)\s+([A-Z][a-zA-Z'.]+(?:\s+[a-zA-Z'.]+)+?)(?:'s|,|\s+(?:to|for|account))/);
+                if (!m) m = memo.match(/authorized by:\s+([A-Z][a-zA-Z'.]+(?:\s+[a-zA-Z'.]+)+?)$/);
+                if (!m) m = memo.match(/KingSyah van deKills/i);
+                if (m) detectedName = typeof m === 'string' ? m : m[1].trim();
             }
 
             const date = new Date(dt.replace(/\./g, '-'));
@@ -99,10 +104,15 @@
             const cat = getCategory(desc);
             txs.push({ date, description: desc, amount, balance, memo, category: cat });
         }
+
+        // Update character badge
         if (detectedName) {
-            const el = document.getElementById('charName');
-            if (el) el.textContent = detectedName;
+            const nameEl = document.getElementById('charName');
+            const corpEl = document.getElementById('charCorp');
+            if (nameEl) nameEl.textContent = detectedName;
+            if (corpEl) corpEl.textContent = 'Wallet Audit Active';
         }
+
         return txs;
     }
 

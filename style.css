@@ -640,14 +640,66 @@ body.light .ambient-bg {
 }
 
 @media (max-width: 768px) {
-    .topbar { padding: 0 1rem; flex-wrap: wrap; height: auto; padding: 0.75rem 1rem; gap: 0.5rem; }
-    .topbar-center { order: 3; flex-basis: 100%; justify-content: flex-start; }
-    .main-content { padding: 1rem; }
-    .kpi-grid { grid-template-columns: 1fr; }
+    /* Compact topbar — single row, minimal */
+    .topbar {
+        padding: 0 0.75rem;
+        height: 48px;
+        gap: 0.5rem;
+    }
+    .logo-title { font-size: 0.9rem; }
+    .logo-sub { display: none; }
+    .logo-icon { width: 28px; height: 28px; font-size: 0.8rem; border-radius: 8px; }
+
+    /* Character badge — compact on mobile */
+    .topbar-center { display: flex; }
+    .char-badge { padding: 0.2rem 0.6rem; gap: 0.4rem; }
+    .char-avatar { width: 22px; height: 22px; font-size: 0.65rem; }
+    .char-name { font-size: 0.75rem; }
+    .char-corp { display: none; }
+
+    /* Compact period buttons */
+    .period-selector { padding: 1px; }
+    .period-btn { padding: 0.25rem 0.5rem; font-size: 0.7rem; }
+
+    /* Smaller icon buttons */
+    .icon-btn { width: 30px; height: 30px; font-size: 0.8rem; }
+
+    /* Tighter content */
+    .main-content { padding: 0.75rem; gap: 0.75rem; }
+
+    /* KPI — 2 columns */
+    .kpi-grid { grid-template-columns: 1fr 1fr; }
+    .kpi-card { padding: 0.85rem; gap: 0.6rem; }
+    .kpi-icon { width: 32px; height: 32px; font-size: 0.85rem; }
+    .kpi-value { font-size: 1.1rem; }
+    .kpi-label { font-size: 0.65rem; }
+
+    /* Charts — single column, shorter */
+    .charts-row, .charts-row:nth-child(even) { grid-template-columns: 1fr; }
+    .chart-body { height: 200px; }
+    .chart-header h3 { font-size: 0.85rem; }
+
+    /* EVE overview — stack */
+    .eve-overview-body { flex-direction: column; padding: 1rem; gap: 1rem; }
+    .eve-donut-wrap { width: 180px; height: 180px; margin: 0 auto; }
+    .eve-donut-amount { font-size: 1.3rem; }
+    .eve-tabs { padding: 0 0.75rem; }
+    .eve-tab { padding: 0.6rem 0.75rem; font-size: 0.78rem; }
+
+    /* Category grid */
     .category-grid { grid-template-columns: 1fr; }
-    .table-controls { flex-wrap: wrap; }
-    .search-box input { width: 100%; }
-    .app-footer { flex-direction: column; gap: 0.5rem; text-align: center; }
+    .cat-card { padding: 0.75rem 1rem; }
+
+    /* Table controls */
+    .table-controls { flex-wrap: wrap; gap: 0.5rem; }
+    .search-box input { width: 100%; font-size: 0.8rem; }
+    .table-controls select { font-size: 0.8rem; padding: 0.4rem 0.6rem; }
+
+    /* Footer */
+    .footer { padding: 1.5rem 0.75rem 1rem; }
+    .footer-inner { padding: 0.5rem 1rem; }
+    .footer-text { font-size: 0.8rem; }
+    .footer-sub { font-size: 0.65rem; }
 }
 
 /* --- EVE-style Overview Section --- */
@@ -823,7 +875,69 @@ body.light .ambient-bg {
     text-align: right;
 }
 
-/* --- COPYRIGHT FOOTER --- */
+/* ── FLOATING KOPI BUTTON — Radar Style ── */
+.kopi-float {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 44px;
+    height: 44px;
+    background: #be1e2d;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    text-decoration: none;
+    cursor: pointer;
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 2px 8px rgba(190, 30, 45, 0.3);
+}
+.kopi-float:hover {
+    transform: scale(1.15);
+    box-shadow: 0 4px 16px rgba(190, 30, 45, 0.5);
+}
+.kopi-float:hover .kopi-ring {
+    animation: none;
+    opacity: 0;
+}
+.kopi-float img {
+    width: 22px;
+    height: 22px;
+    object-fit: contain;
+    display: block;
+    pointer-events: none;
+    position: relative;
+    z-index: 1;
+}
+
+/* Radar rings */
+.kopi-ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 1.5px solid rgba(190, 30, 45, 0.6);
+    animation: radar-ping 2.5s ease-out infinite;
+    pointer-events: none;
+}
+.kopi-r2 { animation-delay: 0.8s; }
+.kopi-r3 { animation-delay: 1.6s; }
+
+@keyframes radar-ping {
+    0%   { transform: scale(1); opacity: 0.8; border-width: 2px; }
+    50%  { opacity: 0.3; }
+    100% { transform: scale(2.2); opacity: 0; border-width: 0.5px; }
+}
+
+@media (max-width: 720px) {
+    .kopi-float {
+        bottom: 16px;
+        right: 16px;
+        width: 40px;
+        height: 40px;
+    }
+    .kopi-float img { width: 20px; height: 20px; }
+}
 .footer {
     text-align: center;
     padding: 2rem 1rem 1.5rem;
