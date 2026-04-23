@@ -55,7 +55,6 @@ eve-audit/
 ├── script.js           Logic (parsing, charts, table, PDF)
 ├── favicon.svg         ISK coin favicon (SVG)
 ├── favicon.png         Favicon fallback (PNG)
-├── README-lite.md      GitHub promo version (with badges)
 └── README-lame.md      Plain text version (no emoji, no badges)
 
 ```
