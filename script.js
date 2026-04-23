@@ -177,10 +177,48 @@
     function updateDashboard() {
         const data = getFilteredByPeriod();
         if (!data.length) {
+            // Reset all KPIs
             $('#kpiBalance').textContent = '—';
+            $('#kpiBalanceSub').textContent = '';
             $('#kpiIncome').textContent = '—';
+            $('#kpiIncomeCount').textContent = '— transactions';
             $('#kpiExpense').textContent = '—';
+            $('#kpiExpenseCount').textContent = '— transactions';
             $('#kpiNet').textContent = '—';
+            $('#kpiNetSub').textContent = '—';
+
+            // Destroy all charts
+            if (chartBalance) { chartBalance.destroy(); chartBalance = null; }
+            if (chartIncomePie) { chartIncomePie.destroy(); chartIncomePie = null; }
+            if (chartExpensePie) { chartExpensePie.destroy(); chartExpensePie = null; }
+            if (chartDailyNet) { chartDailyNet.destroy(); chartDailyNet = null; }
+            if (chartEveDonut) { chartEveDonut.destroy(); chartEveDonut = null; }
+
+            // Clear EVE overview
+            $('#eveDonutAmount').textContent = '—';
+            $('#eveIncomeVal').textContent = '—';
+            $('#eveExpenseVal').textContent = '—';
+            $('#eveLegend').innerHTML = '';
+
+            // Clear category grid
+            $('#categoryGrid').innerHTML = '';
+
+            // Clear transaction table
+            $('#txBody').innerHTML = '';
+            filteredTx = [];
+            $('#txCount').textContent = '0 transactions';
+            $('#pagination').innerHTML = '';
+
+            // Reset character badge
+            var nameEl = document.getElementById('charName');
+            var corpEl = document.getElementById('charCorp');
+            if (nameEl) nameEl.textContent = 'ISK Audit Dashboard';
+            if (corpEl) corpEl.textContent = 'Paste wallet data to begin';
+
+            // Show import modal
+            var importModal = document.getElementById('importModal');
+            if (importModal) importModal.style.display = 'flex';
+
             return;
         }
 
