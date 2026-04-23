@@ -885,7 +885,17 @@
             if (!raw.trim()) { alert('Please paste your wallet data first.'); return; }
 
             var newTx = parseRawData(raw);
-            if (!newTx.length) { alert('No valid transactions found. Check the format.'); return; }
+
+            // Debug: show parse result if nothing found
+            if (!newTx.length) {
+                var sampleLines = raw.trim().split('\n').slice(0, 3);
+                var debug = 'No valid transactions found.\n\n';
+                debug += 'Lines detected: ' + raw.trim().split('\n').length + '\n';
+                debug += 'First line parts: ' + raw.trim().split('\n')[0].split('\t').length + '\n\n';
+                debug += 'Sample:\n' + sampleLines.map(function(l) { return l.substring(0, 80); }).join('\n');
+                alert(debug);
+                return;
+            }
 
             // Merge & deduplicate
             allTx.push.apply(allTx, newTx);
