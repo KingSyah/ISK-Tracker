@@ -91,7 +91,7 @@
                 if (!m) m = memo.match(/(?:to|from|by|paid from)\s+([A-Z][a-zA-Z'.]+(?:\s+[a-zA-Z'.]+)+?)(?:'s|,|\s+(?:to|for|account))/);
                 if (!m) m = memo.match(/authorized by:\s+([A-Z][a-zA-Z'.]+(?:\s+[a-zA-Z'.]+)+?)$/);
                 if (!m) m = memo.match(/KingSyah van deKills/i);
-                if (m) detectedName = typeof m === 'string' ? m : m[1].trim();
+                if (m) detectedName = typeof m === 'string' ? m : (m[1] || m[0]).trim();
             }
 
             const date = new Date(dt.replace(/\./g, '-'));
