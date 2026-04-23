@@ -528,13 +528,16 @@
     }
 
     // ── Category Cards ──
+    let activeCategoryDetail = null; // track which category detail is open
+
     function renderCategories(data) {
         const cats = {};
         for (const t of data) {
             const name = t.category.name;
-            if (!cats[name]) cats[name] = { ...t.category, total: 0, count: 0 };
+            if (!cats[name]) cats[name] = { ...t.category, total: 0, count: 0, transactions: [] };
             cats[name].total += t.amount;
             cats[name].count++;
+            cats[name].transactions.push(t);
         }
 
         const sorted = Object.values(cats).sort((a, b) => Math.abs(b.total) - Math.abs(a.total));
@@ -542,11 +545,24 @@
 
         const grid = $('#categoryGrid');
         grid.innerHTML = '';
+
+        // Detail container (below grid)
+        let detailWrap = document.getElementById('catDetailWrap');
+        if (!detailWrap) {
+            detailWrap = document.createElement('div');
+            detailWrap.id = 'catDetailWrap';
+            detailWrap.className = 'cat-detail-wrap';
+            grid.parentNode.insertBefore(detailWrap, grid.nextSibling);
+        }
+        detailWrap.innerHTML = '';
+        activeCategoryDetail = null;
+
         for (const c of sorted) {
             const isIncome = c.total >= 0;
             const pct = (Math.abs(c.total) / maxAbs * 100).toFixed(0);
             const card = document.createElement('div');
             card.className = 'cat-card';
+            card.style.cursor = 'pointer';
             card.innerHTML = `
                 <div class="cat-left">
                     <span class="cat-name"><i class="${c.icon}" style="color:${c.color};margin-right:6px;font-size:0.8rem"></i>${c.name}</span>
@@ -555,6 +571,76 @@
                 </div>
                 <span class="cat-amount ${isIncome ? 'income' : 'expense'}">${isIncome ? '+' : ''}${shortISK(c.total)}</span>
             `;
+
+            card.addEventListener('click', function () {
+                // Toggle: click same card again closes detail
+                if (activeCategoryDetail === c.name) {
+                    detailWrap.innerHTML = '';
+                    activeCategoryDetail = null;
+                    grid.querySelectorAll('.cat-card').forEach(function (el) { el.classList.remove('active'); });
+                    return;
+                }
+
+                activeCategoryDetail = c.name;
+                // Highlight active card
+                grid.querySelectorAll('.cat-card').forEach(function (el) { el.classList.remove('active'); });
+                card.classList.add('active');
+
+                // Build detail panel
+                const txs = c.transactions.sort(function (a, b) { return b.date - a.date; });
+                let rows = '';
+                for (const t of txs) {
+                    const amtCls = t.amount >= 0 ? 'tx-amount-positive' : 'tx-amount-negative';
+                    rows += '<tr>' +
+                        '<td>' + t.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ' ' + t.date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) + '</td>' +
+                        '<td style="max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-secondary);font-size:0.8rem" title="' + t.memo + '">' + (t.memo || t.description) + '</td>' +
+                        '<td class="num-col ' + amtCls + '">' + (t.amount >= 0 ? '+' : '') + formatISK(t.amount) + '</td>' +
+                        '<td class="num-col" style="color:var(--text-muted)">' + formatISK(t.balance) + '</td>' +
+                        '</tr>';
+                }
+
+                detailWrap.innerHTML =
+                    '<div class="cat-detail-panel">' +
+                    '  <div class="cat-detail-header">' +
+                    '    <span class="cat-detail-title"><i class="' + c.icon + '" style="color:' + c.color + ';margin-right:6px"></i>' + c.name + ' <span class="cat-detail-count">' + c.count + ' transaksi</span></span>' +
+                    '    <button class="cat-detail-close" id="catDetailClose"><i class="fas fa-xmark"></i></button>' +
+                    '  </div>' +
+                    '  <div class="cat-detail-summary">' +
+                    '    <div class="cat-detail-stat">' +
+                    '      <span class="cat-detail-stat-label">Total</span>' +
+                    '      <span class="cat-detail-stat-value ' + (isIncome ? 'income' : 'expense') + '">' + (isIncome ? '+' : '') + formatISK(c.total) + '</span>' +
+                    '    </div>' +
+                    '    <div class="cat-detail-stat">' +
+                    '      <span class="cat-detail-stat-label">Rata-rata</span>' +
+                    '      <span class="cat-detail-stat-value">' + formatISK(Math.round(c.total / c.count)) + '</span>' +
+                    '    </div>' +
+                    '    <div class="cat-detail-stat">' +
+                    '      <span class="cat-detail-stat-label">Persentase</span>' +
+                    '      <span class="cat-detail-stat-value">' + pct + '% dari total</span>' +
+                    '    </div>' +
+                    '  </div>' +
+                    '  <div class="cat-detail-table-wrap">' +
+                    '    <table class="cat-detail-table">' +
+                    '      <thead><tr>' +
+                    '        <th>Date</th><th>Description</th><th class="num-col">Amount</th><th class="num-col">Balance</th>' +
+                    '      </tr></thead>' +
+                    '      <tbody>' + rows + '</tbody>' +
+                    '    </table>' +
+                    '  </div>' +
+                    '</div>';
+
+                // Close button
+                document.getElementById('catDetailClose').addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    detailWrap.innerHTML = '';
+                    activeCategoryDetail = null;
+                    grid.querySelectorAll('.cat-card').forEach(function (el) { el.classList.remove('active'); });
+                });
+
+                // Scroll into view
+                detailWrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            });
+
             grid.appendChild(card);
         }
     }
