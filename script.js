@@ -740,6 +740,34 @@
             document.getElementById('importModal').style.display = 'flex';
         });
 
+        // Import confirm button
+        $('#importConfirmBtn').addEventListener('click', () => {
+            const raw = $('#importTextarea').value;
+            if (!raw.trim()) { alert('Please paste your wallet data first.'); return; }
+
+            const newTx = parseRawData(raw);
+            if (!newTx.length) { alert('No valid transactions found. Check the format.'); return; }
+
+            // Merge & deduplicate
+            allTx.push(...newTx);
+            const seen = new Set();
+            const unique = [];
+            for (const t of allTx) {
+                const key = t.date.getTime() + '|' + t.amount + '|' + t.balance;
+                if (!seen.has(key)) { seen.add(key); unique.push(t); }
+            }
+            allTx = unique.sort((a, b) => b.date - a.date);
+            saveToStorage();
+
+            // Close modal & refresh
+            document.getElementById('importModal').style.display = 'none';
+            $('#importTextarea').value = '';
+            populateCategoryFilter();
+            updateDashboard();
+
+            alert(`${newTx.length} transactions imported successfully.`);
+        });
+
         // Reset button
         $('#resetDataBtn').addEventListener('click', () => {
             if (confirm('Clear all transaction data? This cannot be undone.')) {
