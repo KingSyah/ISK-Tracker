@@ -604,6 +604,20 @@
     }
 
     // ── PDF Export ──
+    // ── Helper: add chart image with correct aspect ratio ──
+    function addChartImage(doc, chart, x, y, maxW, maxH) {
+        if (!chart) return y;
+        const imgData = chart.toBase64Image('image/png', 1.0);
+        // Get chart canvas aspect ratio
+        const canvas = chart.canvas;
+        const ratio = canvas.width / canvas.height;
+        let w = maxW;
+        let h = w / ratio;
+        if (h > maxH) { h = maxH; w = h * ratio; }
+        doc.addImage(imgData, 'PNG', x, y, w, h);
+        return y + h;
+    }
+
     async function exportPDF() {
         const data = getFilteredByPeriod();
         if (!data.length) { alert('No data to export.'); return; }
@@ -614,16 +628,24 @@
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
             const pw = doc.internal.pageSize.getWidth();
+            const ph = doc.internal.pageSize.getHeight();
+            const margin = 12;
+            const contentW = pw - margin * 2;
 
-            // Header
-            doc.setFontSize(20);
+            // ── PAGE 1: Header + Summary + Balance Chart ──
+
+            // Header bar
+            doc.setFillColor(26, 31, 46);
+            doc.rect(0, 0, pw, 18, 'F');
+            doc.setTextColor(232, 236, 244);
+            doc.setFontSize(16);
             doc.setFont(undefined, 'bold');
-            doc.text('EVE Online ISK Audit Report', pw / 2, 15, { align: 'center' });
-            doc.setFontSize(10);
+            doc.text('EVE Online ISK Audit Report', margin, 12);
+            doc.setFontSize(9);
             doc.setFont(undefined, 'normal');
-            doc.text(`Generated: ${new Date().toLocaleString()}`, pw / 2, 22, { align: 'center' });
+            doc.text(`Generated: ${new Date().toLocaleString()}`, pw - margin, 12, { align: 'right' });
 
-            // Summary
+            // Summary boxes
             let totalIncome = 0, totalExpense = 0;
             for (const t of data) {
                 if (t.amount > 0) totalIncome += t.amount;
@@ -632,33 +654,90 @@
             const net = totalIncome + totalExpense;
             const latestBalance = data[0].balance;
 
-            doc.setFontSize(11);
-            doc.text(`Current Balance: ${formatISK(latestBalance)}`, 15, 32);
-            doc.text(`Total Income: ${formatISK(totalIncome)}`, 15, 38);
-            doc.text(`Total Expenses: ${formatISK(Math.abs(totalExpense))}`, 15, 44);
-            doc.text(`Net Flow: ${net >= 0 ? '+' : ''}${formatISK(net)}`, 15, 50);
+            const boxY = 22;
+            const boxH = 14;
+            const boxW = (contentW - 6) / 4;
+            const summaries = [
+                { label: 'Current Balance', value: formatISK(latestBalance), color: [59, 130, 246] },
+                { label: 'Total Income', value: '+' + formatISK(totalIncome), color: [16, 185, 129] },
+                { label: 'Total Expenses', value: formatISK(totalExpense), color: [239, 68, 68] },
+                { label: 'Net Flow', value: (net >= 0 ? '+' : '') + formatISK(net), color: net >= 0 ? [16, 185, 129] : [239, 68, 68] },
+            ];
 
-            // Charts as images
-            let y = 58;
-            if (chartBalance) {
-                doc.addImage(chartBalance.toBase64Image(), 'PNG', 10, y, pw / 2 - 15, 50);
-            }
-            if (chartDailyNet) {
-                doc.addImage(chartDailyNet.toBase64Image(), 'PNG', pw / 2 + 5, y, pw / 2 - 15, 50);
-            }
-            y += 55;
-            if (chartIncomePie) {
-                doc.addImage(chartIncomePie.toBase64Image(), 'PNG', 10, y, pw / 2 - 15, 50);
-            }
-            if (chartExpensePie) {
-                doc.addImage(chartExpensePie.toBase64Image(), 'PNG', pw / 2 + 5, y, pw / 2 - 15, 50);
-            }
+            summaries.forEach((s, i) => {
+                const bx = margin + i * (boxW + 2);
+                doc.setFillColor(245, 247, 250);
+                doc.roundedRect(bx, boxY, boxW, boxH, 2, 2, 'F');
+                doc.setFontSize(7);
+                doc.setTextColor(107, 114, 128);
+                doc.text(s.label, bx + 3, boxY + 5);
+                doc.setFontSize(10);
+                doc.setFont(undefined, 'bold');
+                doc.setTextColor(...s.color);
+                doc.text(s.value, bx + 3, boxY + 11);
+                doc.setFont(undefined, 'normal');
+            });
 
-            // Transaction table
+            // Balance history chart (full width)
+            const chartY = boxY + boxH + 5;
+            const chartMaxH = ph - chartY - margin - 5;
+            addChartImage(doc, chartBalance, margin, chartY, contentW, chartMaxH);
+
+            // ── PAGE 2: Donut charts + Daily Net ──
             doc.addPage();
-            doc.setFontSize(14);
+
+            // Header bar
+            doc.setFillColor(26, 31, 46);
+            doc.rect(0, 0, pw, 14, 'F');
+            doc.setTextColor(232, 236, 244);
+            doc.setFontSize(11);
             doc.setFont(undefined, 'bold');
-            doc.text('Transaction Ledger', 15, 15);
+            doc.text('Income & Expense Breakdown', margin, 10);
+
+            const rowY = 18;
+            const halfW = (contentW - 8) / 2;
+
+            // Income donut (left) — square
+            if (chartIncomePie) {
+                doc.setFontSize(9);
+                doc.setTextColor(16, 185, 129);
+                doc.setFont(undefined, 'bold');
+                doc.text('Income by Category', margin, rowY);
+                doc.setFont(undefined, 'normal');
+                addChartImage(doc, chartIncomePie, margin, rowY + 2, halfW, 70);
+            }
+
+            // Expense donut (right) — square
+            if (chartExpensePie) {
+                doc.setFontSize(9);
+                doc.setTextColor(239, 68, 68);
+                doc.setFont(undefined, 'bold');
+                doc.text('Expenses by Category', margin + halfW + 8, rowY);
+                doc.setFont(undefined, 'normal');
+                addChartImage(doc, chartExpensePie, margin + halfW + 8, rowY + 2, halfW, 70);
+            }
+
+            // Daily net flow (full width below donuts)
+            const dailyY = rowY + 78;
+            if (chartDailyNet) {
+                doc.setFontSize(9);
+                doc.setTextColor(107, 114, 128);
+                doc.setFont(undefined, 'bold');
+                doc.text('Daily Net Flow', margin, dailyY);
+                doc.setFont(undefined, 'normal');
+                addChartImage(doc, chartDailyNet, margin, dailyY + 2, contentW, 60);
+            }
+
+            // ── PAGE 3+: Transaction table ──
+            doc.addPage();
+
+            // Header
+            doc.setFillColor(26, 31, 46);
+            doc.rect(0, 0, pw, 14, 'F');
+            doc.setTextColor(232, 236, 244);
+            doc.setFontSize(11);
+            doc.setFont(undefined, 'bold');
+            doc.text('Transaction Ledger', margin, 10);
 
             const tableBody = data.map(t => [
                 t.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
@@ -671,15 +750,34 @@
             doc.autoTable({
                 head: [['Date', 'Category', 'Description', 'Amount', 'Balance']],
                 body: tableBody,
-                startY: 20,
-                margin: { left: 10, right: 10 },
-                styles: { fontSize: 7, cellPadding: 1.5, overflow: 'linebreak' },
-                headStyles: { fillColor: [26, 31, 46], textColor: 232, fontStyle: 'bold', fontSize: 7 },
-                alternateRowStyles: { fillColor: [245, 247, 250] },
+                startY: 18,
+                margin: { left: margin, right: margin },
+                styles: { fontSize: 7, cellPadding: 1.5, overflow: 'linebreak', textColor: [55, 65, 81] },
+                headStyles: { fillColor: [26, 31, 46], textColor: [232, 236, 244], fontStyle: 'bold', fontSize: 7 },
+                alternateRowStyles: { fillColor: [248, 250, 252] },
+                columnStyles: {
+                    0: { cellWidth: 22 },
+                    1: { cellWidth: 35 },
+                    2: { cellWidth: 'auto' },
+                    3: { cellWidth: 30, halign: 'right', fontStyle: 'bold' },
+                    4: { cellWidth: 35, halign: 'right' },
+                },
+                didParseCell: (data) => {
+                    // Color amount column
+                    if (data.section === 'body' && data.column.index === 3) {
+                        const raw = data.cell.raw;
+                        if (raw.startsWith('+')) data.cell.styles.textColor = [16, 185, 129];
+                        else data.cell.styles.textColor = [239, 68, 68];
+                    }
+                },
                 didDrawPage: (data) => {
+                    // Footer
                     doc.setFontSize(7);
                     doc.setTextColor(150);
-                    doc.text(`ISK Audit Report — Page ${doc.internal.getNumberOfPages()}`, pw / 2, doc.internal.pageSize.getHeight() - 5, { align: 'center' });
+                    doc.text(
+                        `ISK Audit Report — Page ${doc.internal.getNumberOfPages()}`,
+                        pw / 2, ph - 5, { align: 'center' }
+                    );
                 }
             });
 
