@@ -55,11 +55,9 @@ eve-audit/
 ├── script.js           Logic (parsing, charts, table, PDF)
 ├── favicon.svg         ISK coin favicon (SVG)
 ├── favicon.png         Favicon fallback (PNG)
-├── README.md           This file
 ├── README-lite.md      GitHub promo version (with badges)
-├── README-lame.md      Plain text version (no emoji, no badges)
-├── CHANGELOG.md        Version history
-└── _reference/         Sample data & screenshots (not part of app)
+└── README-lame.md      Plain text version (no emoji, no badges)
+
 ```
 
 No build step. No dependencies to install. Just open and use.
