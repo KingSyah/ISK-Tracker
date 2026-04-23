@@ -59,7 +59,7 @@ No install. No signup. Just open and use.
 
 ## 📜 License
 
-MIT © 2026 [KingSyah](https://github.com/kingsyah)
+MIT © 2026 [KingSyah](https://kingsyah.github.io/)
 
 ---
 
