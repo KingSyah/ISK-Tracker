@@ -82,7 +82,7 @@
             const desc = parts[1].trim();
             const amtStr = parts[2].trim();
             const balStr = parts[3].trim();
-            const memo = parts.length >= 5 ? parts[4].trim() : '';
+            const memo = (parts[4] || '').trim();
 
             // Auto-detect character name from memo patterns
             if (!detectedName && memo) {
